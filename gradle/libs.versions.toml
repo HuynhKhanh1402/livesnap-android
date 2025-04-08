@@ -11,6 +11,7 @@ composeBom = "2025.03.01"
 retrofit = "2.11.0"
 hilt = "2.51.1"
 ksp = "2.1.0-1.0.29"
+uiTextGoogleFonts = "1.7.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,7 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version = "4.12.0" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.7.0"}
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
