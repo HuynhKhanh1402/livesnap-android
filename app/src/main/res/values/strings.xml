@@ -5,4 +5,19 @@
     <string name="app_description">Live photos from friends, right on the home screen</string>
     <string name="create_an_account">Create an account</string>
     <string name="log_in">Log in</string>
+    <string name="what_is_your_email">What is your email?</string>
+    <string name="email_address">Email address</string>
+    <string name="agree_with_terms">By clicking Continue, you agree with our Terms of Service and Privacy Policy.</string>
+    <string name="continue_button">Continue</string>
+    <string name="enter_your_password">Enter your password</string>
+    <string name="password">Password</string>
+    <string name="toggle_password_visibility">Toggle password visibility</string>
+    <string name="password_must_be_at_least_8_characters">Password must be at least 8 characters</string>
+    <string name="enter_your_name">Enter your name</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="both_names_required">Both first name and last name are required</string>
+    <string name="enter_your_user_id">Enter your user ID</string>
+    <string name="user_id">User ID</string>
+    <string name="user_id_must_be_at_least_4_characters">User ID must be at least 4 characters</string>
 </resources>

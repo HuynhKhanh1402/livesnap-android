@@ -28,10 +28,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.R
+import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+
+object AuthSelectDestination : NavigationDestination {
+    override val route = "auth/select"
+}
 
 @Preview(showBackground = true)
 @Composable
-fun SelectScreen(
+fun AuthSelectScreen(
     onCreateAccountClick: () -> Unit = {},
     onLoginClick: () -> Unit = {}
 ) {
@@ -60,12 +65,12 @@ fun SelectScreen(
                 Icon(
                     imageVector = Icons.Default.Favorite,
                     contentDescription = stringResource(R.string.app_icon),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -85,7 +90,11 @@ fun SelectScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth(0.8f)
             ) {
-                Text(text = stringResource(R.string.create_an_account), color = MaterialTheme.colorScheme.onPrimary)
+                Text(
+                    text = stringResource(R.string.create_an_account),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -93,7 +102,11 @@ fun SelectScreen(
             TextButton(
                 onClick = onLoginClick
             ) {
-                Text(stringResource(R.string.log_in), color = MaterialTheme.colorScheme.onBackground)
+                Text(
+                    text = stringResource(R.string.log_in),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
