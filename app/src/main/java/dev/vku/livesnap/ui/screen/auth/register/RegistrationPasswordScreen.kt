@@ -38,15 +38,15 @@ object RegistrationPasswordDestination : NavigationDestination {
     override val route = "auth/register/password"
 }
 
-@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationPasswordScreen(
-    onBack: () -> Unit = {},
-    onNext: () -> Unit = {}
+    viewModel: RegistrationViewModel,
+    onBack: () -> Unit,
+    onNext: () -> Unit
 ) {
-    val password = remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,8 +76,8 @@ fun RegistrationPasswordScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = password.value,
-                onValueChange = { password.value = it },
+                value = viewModel.password,
+                onValueChange = viewModel::setPasswordField,
                 label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible.value) VisualTransformation.None else PasswordVisualTransformation(),
@@ -102,12 +102,12 @@ fun RegistrationPasswordScreen(
             Text(
                 text = stringResource(R.string.password_must_be_at_least_8_characters),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (password.value.length >= 8) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                color = if (viewModel.password.length >= 8) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = onNext,
-                enabled = password.value.length >= 8,
+                enabled = viewModel.password.length >= 8,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

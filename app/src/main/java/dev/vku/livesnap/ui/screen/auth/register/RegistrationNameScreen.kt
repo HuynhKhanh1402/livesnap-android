@@ -36,16 +36,13 @@ object RegistrationNameDestination : NavigationDestination {
     override val route = "auth/register/name"
 }
 
-@Preview()
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationNameScreen(
-    onBack: () -> Unit = {},
-    onNext: () -> Unit = {}
+    viewModel: RegistrationViewModel,
+    onBack: () -> Unit,
+    onNext: () -> Unit
 ) {
-    val firstName = remember { mutableStateOf("") }
-    val lastName = remember { mutableStateOf("") }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,8 +72,8 @@ fun RegistrationNameScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = lastName.value,
-                onValueChange = { lastName.value = it },
+                value = viewModel.lastName,
+                onValueChange = viewModel::setLastNameField,
                 label = { Text(stringResource(R.string.last_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -90,8 +87,8 @@ fun RegistrationNameScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = firstName.value,
-                onValueChange = { firstName.value = it },
+                value = viewModel.firstName,
+                onValueChange = viewModel::setFirstNameField,
                 label = { Text(stringResource(R.string.first_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -107,7 +104,7 @@ fun RegistrationNameScreen(
             Text(
                 text = stringResource(R.string.both_names_required),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (firstName.value.isNotEmpty() && lastName.value.isNotEmpty())
+                color = if (viewModel.firstName.isNotEmpty() && viewModel.lastName.isNotEmpty())
                     MaterialTheme.colorScheme.secondary
                 else
                     MaterialTheme.colorScheme.primary
@@ -115,7 +112,7 @@ fun RegistrationNameScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = onNext,
-                enabled = firstName.value.isNotEmpty() && lastName.value.isNotEmpty(),
+                enabled = viewModel.firstName.isNotEmpty() && viewModel.lastName.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

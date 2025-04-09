@@ -11,7 +11,7 @@ interface AppContainer {
 }
 
 class DefaultAppContainer : AppContainer {
-    private val baseUrl = "https://google.com/"
+    private val baseUrl = "https://apilivesnap.vercel.app/api/"
 
     private val retrofit: Retrofit = Retrofit.Builder()
         .addConverterFactory(GsonConverterFactory.create())

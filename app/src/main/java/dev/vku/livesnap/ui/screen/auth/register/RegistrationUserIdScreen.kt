@@ -22,12 +22,12 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
@@ -35,14 +35,26 @@ object RegistrationUserIdDestination : NavigationDestination {
     override val route = "auth/register/userId"
 }
 
-@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationUserIdScreen(
-    onBack: () -> Unit = {},
-    onNext: () -> Unit = {}
+    viewModel: RegistrationViewModel,
+    navController: NavHostController,
+    onBack: () -> Unit
 ) {
-    val userId = remember { mutableStateOf("") }
+    val registrationResult = viewModel.registrationResult.collectAsState()
+
+    LaunchedEffect(registrationResult) {
+        when (registrationResult) {
+            is RegistrationResult.Success -> {
+//                navController.navigate(HomeDestination.route)
+                viewModel.resetRegistrationResult()
+            }
+            is RegistrationResult.Error -> {
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -72,8 +84,8 @@ fun RegistrationUserIdScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = userId.value,
-                onValueChange = { userId.value = it },
+                value = viewModel.userId,
+                onValueChange = viewModel::setUserIdField,
                 label = { Text(stringResource(R.string.user_id)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -89,15 +101,15 @@ fun RegistrationUserIdScreen(
             Text(
                 text = stringResource(R.string.user_id_must_be_at_least_4_characters),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (userId.value.length >= 4)
+                color = if (viewModel.userId.length >= 4)
                     MaterialTheme.colorScheme.secondary
                 else
                     MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = onNext,
-                enabled = userId.value.length >= 4,
+                onClick = { viewModel.register() },
+                enabled = viewModel.userId.length >= 4,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

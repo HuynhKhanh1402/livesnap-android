@@ -39,13 +39,12 @@ object RegistrationEmailDestination : NavigationDestination {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview
 @Composable
 fun RegistrationEmailScreen(
-    onBack: () -> Unit = {},
-    onNext: () -> Unit = {}
+    viewModel: RegistrationViewModel,
+    onBack: () -> Unit,
+    onNext: () -> Unit
 ) {
-    val email = remember { mutableStateOf("") }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,8 +75,8 @@ fun RegistrationEmailScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = email.value,
-                onValueChange = { email.value = it },
+                value = viewModel.email,
+                onValueChange = viewModel::setEmailField,
                 label = { Text(stringResource(R.string.email_address)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
@@ -99,7 +98,7 @@ fun RegistrationEmailScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = onNext,
-                enabled = email.value.isNotEmpty(),
+                enabled = viewModel.email.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
