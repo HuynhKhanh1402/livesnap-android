@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">LiveSnap</string>
+    <string name="smartphone_illustration">Smartphone Illustration</string>
+    <string name="app_icon">App Icon</string>
+    <string name="app_description">Live photos from friends, right on the home screen</string>
+    <string name="create_an_account">Create an account</string>
+    <string name="log_in">Log in</string>
 </resources>
