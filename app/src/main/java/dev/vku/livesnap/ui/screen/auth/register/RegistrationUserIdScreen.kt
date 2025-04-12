@@ -1,6 +1,5 @@
 package dev.vku.livesnap.ui.screen.auth.register
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,18 +45,15 @@ object RegistrationUserIdDestination : NavigationDestination {
 fun RegistrationUserIdScreen(
     viewModel: RegistrationViewModel,
     navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit
 ) {
     val registrationResult by viewModel.registrationResult.collectAsState()
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    Log.d("RegistrationUserIdScreen", "registrationResult: $registrationResult")
 
     LaunchedEffect(registrationResult) {
         when (registrationResult) {
             is RegistrationResult.Success -> {
-//                navController.navigate(HomeDestination.route)
                 snackbarHostState.showSnackbar(context.getString(R.string.registration_successful))
                 viewModel.resetRegistrationResult()
             }
@@ -83,7 +78,6 @@ fun RegistrationUserIdScreen(
                     .background(MaterialTheme.colorScheme.background)
             )
         },
-        snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
@@ -104,6 +98,16 @@ fun RegistrationUserIdScreen(
                 onValueChange = viewModel::setUserIdField,
                 label = { Text(stringResource(R.string.user_id)) },
                 modifier = Modifier.fillMaxWidth(),
+                isError = viewModel.userId.isNotEmpty() && !viewModel.isValidUserId(),
+                supportingText = {
+                    if (viewModel.userId.isNotEmpty() && !viewModel.isValidUserId()) {
+                        Text(
+                            text = stringResource(R.string.user_id_invalid),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -114,18 +118,18 @@ fun RegistrationUserIdScreen(
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.user_id_must_be_at_least_4_characters),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (viewModel.userId.length >= 4)
-                    MaterialTheme.colorScheme.secondary
-                else
-                    MaterialTheme.colorScheme.primary
-            )
+//            Text(
+//                text = stringResource(R.string.user_id_must_be_at_least_4_characters),
+//                style = MaterialTheme.typography.bodySmall,
+//                color = if (viewModel.userId.length >= 4)
+//                    MaterialTheme.colorScheme.secondary
+//                else
+//                    MaterialTheme.colorScheme.primary
+//            )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { viewModel.register() },
-                enabled = viewModel.userId.length >= 4 && !viewModel.isLoading,
+                enabled = viewModel.isValidUserId() && !viewModel.isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

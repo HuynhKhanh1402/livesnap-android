@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,11 +22,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
@@ -76,6 +72,14 @@ fun RegistrationNameScreen(
                 onValueChange = viewModel::setLastNameField,
                 label = { Text(stringResource(R.string.last_name)) },
                 modifier = Modifier.fillMaxWidth(),
+                isError = viewModel.lastNameError != null,
+                supportingText = {
+                    Text(
+                        text = viewModel.lastNameError ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -91,6 +95,14 @@ fun RegistrationNameScreen(
                 onValueChange = viewModel::setFirstNameField,
                 label = { Text(stringResource(R.string.first_name)) },
                 modifier = Modifier.fillMaxWidth(),
+                isError = viewModel.firstNameError != null,
+                supportingText = {
+                    Text(
+                        text = viewModel.firstNameError ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -111,7 +123,11 @@ fun RegistrationNameScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = onNext,
+                onClick = {
+                    if (viewModel.validateNames()) {
+                        onNext()
+                    }
+                },
                 enabled = viewModel.firstName.isNotEmpty() && viewModel.lastName.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

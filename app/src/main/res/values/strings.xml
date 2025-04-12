@@ -22,4 +22,6 @@
     <string name="user_id_must_be_at_least_4_characters">User ID must be at least 4 characters</string>
     <string name="registration_successful">Registration successful!</string>
     <string name="create_account">Create account</string>
+    <string name="invalid_email_format">Invalid email format</string>
+    <string name="user_id_invalid">Username must be at least 4 characters long and contain only letters or numbers.</string>
 </resources>
