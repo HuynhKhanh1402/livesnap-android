@@ -1,6 +1,6 @@
-package dev.vku.livesnap.data.remote.dto
+package dev.vku.livesnap.data.remote.dto.request
 
-data class UserRegistrationDTO(
+data class UserRegistrationRequest(
     val firstName: String,
     val lastName: String,
     val email: String,

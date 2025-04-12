@@ -20,4 +20,6 @@
     <string name="enter_your_user_id">Enter your user ID</string>
     <string name="user_id">User ID</string>
     <string name="user_id_must_be_at_least_4_characters">User ID must be at least 4 characters</string>
+    <string name="registration_successful">Registration successful!</string>
+    <string name="create_account">Create account</string>
 </resources>

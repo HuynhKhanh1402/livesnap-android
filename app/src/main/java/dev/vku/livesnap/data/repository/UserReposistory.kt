@@ -1,19 +1,17 @@
 package dev.vku.livesnap.data.repository
 
 import dev.vku.livesnap.data.remote.ApiService
-import dev.vku.livesnap.data.remote.dto.UserRegistrationDTO
-import dev.vku.livesnap.domain.mapper.toDomain
-import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
 
 interface UsersRepository {
-    suspend fun registerUser(user: UserRegistrationDTO): User
+    suspend fun registerUser(user: UserRegistrationRequest): UserRegistrationResponse
 }
 
 class DefaultUsersRepository(
     private val apiService: ApiService
 ) : UsersRepository {
-    override suspend fun registerUser(user: UserRegistrationDTO): User {
-        val userDTO = apiService.registerUser(user)
-        return userDTO.toDomain()
+    override suspend fun registerUser(user: UserRegistrationRequest): UserRegistrationResponse {
+        return apiService.registerUser(user)
     }
 }

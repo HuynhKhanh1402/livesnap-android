@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.auth.register
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -24,10 +26,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
@@ -42,17 +49,25 @@ fun RegistrationUserIdScreen(
     navController: NavHostController,
     onBack: () -> Unit
 ) {
-    val registrationResult = viewModel.registrationResult.collectAsState()
+    val registrationResult by viewModel.registrationResult.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Log.d("RegistrationUserIdScreen", "registrationResult: $registrationResult")
 
     LaunchedEffect(registrationResult) {
         when (registrationResult) {
             is RegistrationResult.Success -> {
 //                navController.navigate(HomeDestination.route)
+                snackbarHostState.showSnackbar(context.getString(R.string.registration_successful))
                 viewModel.resetRegistrationResult()
             }
             is RegistrationResult.Error -> {
+                snackbarHostState.showSnackbar((registrationResult as RegistrationResult.Error).message)
+                viewModel.resetRegistrationResult()
             }
-            else -> {}
+            else -> {
+            }
         }
     }
 
@@ -68,6 +83,7 @@ fun RegistrationUserIdScreen(
                     .background(MaterialTheme.colorScheme.background)
             )
         },
+        snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
@@ -109,12 +125,16 @@ fun RegistrationUserIdScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { viewModel.register() },
-                enabled = viewModel.userId.length >= 4,
+                enabled = viewModel.userId.length >= 4 && !viewModel.isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(stringResource(R.string.continue_button))
+                Text(stringResource(R.string.create_account))
             }
         }
+    }
+
+    if (viewModel.isLoading) {
+        LoadingOverlay()
     }
 }

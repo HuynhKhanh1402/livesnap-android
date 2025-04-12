@@ -1,20 +1,21 @@
 package dev.vku.livesnap.ui.screen.auth.register
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.vku.livesnap.data.remote.dto.UserRegistrationDTO
+import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.repository.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 sealed class RegistrationResult {
-    object Success : RegistrationResult()
+    data object Success : RegistrationResult()
     data class Error(val message: String) : RegistrationResult()
-    object Idle : RegistrationResult()
+    data object Idle : RegistrationResult()
 }
 
 class RegistrationViewModel(
@@ -65,17 +66,22 @@ class RegistrationViewModel(
             _registrationResult.value = RegistrationResult.Idle
             isLoading = true
             try {
-                val userRegistration = UserRegistrationDTO(
+                val userRegistration = UserRegistrationRequest(
                     firstName = firstName,
                     lastName = lastName,
                     email = email,
                     password = password,
                     username = userId
                 )
-                usersRepository.registerUser(userRegistration)
-                _registrationResult.value = RegistrationResult.Success
+                val response = usersRepository.registerUser(userRegistration)
+                if (response.code == 200) {
+                    _registrationResult.value = RegistrationResult.Success
+                } else {
+                    _registrationResult.value = RegistrationResult.Error(response.message)
+                }
             } catch (e: Exception) {
                 _registrationResult.value = RegistrationResult.Error(e.message ?: "Unknown error")
+                Log.e("RegistrationViewModel", "Registration failed: ${e.message}", e)
             } finally {
                 isLoading = false
             }
