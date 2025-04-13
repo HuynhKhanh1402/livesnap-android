@@ -7,11 +7,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import dev.vku.livesnap.ui.AppViewModelProvider
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationEmailDestination
@@ -31,7 +30,7 @@ fun LiveSnapNavHost(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val registrationViewModel: RegistrationViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val registrationViewModel: RegistrationViewModel = hiltViewModel()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }

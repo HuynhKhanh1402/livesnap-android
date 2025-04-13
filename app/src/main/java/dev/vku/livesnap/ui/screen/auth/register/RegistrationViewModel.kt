@@ -6,11 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.repository.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class EmailExistResult {
     data object Exist : EmailExistResult()
@@ -25,9 +27,10 @@ sealed class RegistrationResult {
     data object Idle : RegistrationResult()
 }
 
-class RegistrationViewModel(
+@HiltViewModel
+class RegistrationViewModel @Inject constructor(
     private val usersRepository: UsersRepository
-) : ViewModel() {
+): ViewModel() {
     var email by mutableStateOf("")
 
     var isEmailValid by mutableStateOf(true)
