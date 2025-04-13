@@ -27,6 +27,8 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
+import dev.vku.livesnap.ui.screen.home.HomeDestination
+import dev.vku.livesnap.ui.screen.home.HomeScreen
 
 @Composable
 fun LiveSnapNavHost(
@@ -100,6 +102,14 @@ fun LiveSnapNavHost(
                     onBack = { navController.popBackStack() },
                     onNext = { },
                     onForgotPassword = { }
+                )
+            }
+
+            composable(route = HomeDestination.route) {
+                HomeScreen(
+                    onHistoryClick = { /* Điều hướng đến màn hình lịch sử nếu có */ },
+                    onProfileClick = { /* Điều hướng đến hồ sơ */ },
+                    onFriendClick = { /* Điều hướng đến bạn bè */ }
                 )
             }
         }
