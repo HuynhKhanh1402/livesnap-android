@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,15 +22,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.vku.livesnap.LoadingOverlay
@@ -42,7 +42,7 @@ object RegistrationUserIdDestination : NavigationDestination {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationUserIdScreen(
+fun RegistrationUsernameScreen(
     viewModel: RegistrationViewModel,
     navController: NavHostController,
     snackbarHostState: SnackbarHostState,
@@ -68,14 +68,22 @@ fun RegistrationUserIdScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Register",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -85,24 +93,26 @@ fun RegistrationUserIdScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(128.dp))
+
             Text(
-                 text = stringResource(R.string.enter_your_user_id),
+                text = stringResource(R.string.enter_your_username),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = viewModel.userId,
-                onValueChange = viewModel::setUserIdField,
-                label = { Text(stringResource(R.string.user_id)) },
+                value = viewModel.username,
+                onValueChange = viewModel::setUsernameField,
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
-                isError = viewModel.userId.isNotEmpty() && !viewModel.isValidUserId(),
+                isError = viewModel.username.isNotEmpty() && !viewModel.isValidUsername(),
                 supportingText = {
-                    if (viewModel.userId.isNotEmpty() && !viewModel.isValidUserId()) {
+                    if (viewModel.username.isNotEmpty() && !viewModel.isValidUsername()) {
                         Text(
-                            text = stringResource(R.string.user_id_invalid),
+                            text = stringResource(R.string.username_invalid),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -129,7 +139,7 @@ fun RegistrationUserIdScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { viewModel.register() },
-                enabled = viewModel.isValidUserId() && !viewModel.isLoading,
+                enabled = viewModel.isValidUsername() && !viewModel.isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

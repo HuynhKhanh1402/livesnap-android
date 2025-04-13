@@ -53,7 +53,7 @@ class RegistrationViewModel(
     var password by mutableStateOf("")
         private set
 
-    var userId by mutableStateOf("")
+    var username by mutableStateOf("")
         private set
 
     var isLoading by mutableStateOf(false)
@@ -77,8 +77,8 @@ class RegistrationViewModel(
         password = newPassword
     }
 
-    fun setUserIdField(newUserId: String) {
-        userId = newUserId
+    fun setUsernameField(newUsername: String) {
+        username = newUsername
     }
 
     private fun validateEmail(email: String): Boolean {
@@ -136,9 +136,9 @@ class RegistrationViewModel(
         return isValid
     }
 
-    fun isValidUserId(): Boolean {
+    fun isValidUsername(): Boolean {
         val regex = Regex("^[a-zA-Z0-9]{4,}$")
-        return userId.matches(regex)
+        return username.matches(regex)
     }
 
     fun register() {
@@ -151,7 +151,7 @@ class RegistrationViewModel(
                     lastName = lastName,
                     email = email,
                     password = password,
-                    username = userId
+                    username = username
                 )
                 val response = usersRepository.registerUser(userRegistration)
                 if (response.code == 200) {

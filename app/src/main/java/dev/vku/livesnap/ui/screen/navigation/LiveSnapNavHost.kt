@@ -21,7 +21,7 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationNameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
-import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdScreen
+import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
 
 @Composable
@@ -71,7 +71,7 @@ fun LiveSnapNavHost(
                 )
             }
             composable(route = RegistrationUserIdDestination.route) {
-                RegistrationUserIdScreen(
+                RegistrationUsernameScreen(
                     viewModel = registrationViewModel,
                     navController = navController,
                     snackbarHostState = snackbarHostState,
