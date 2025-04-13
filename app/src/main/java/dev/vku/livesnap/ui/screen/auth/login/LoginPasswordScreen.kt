@@ -58,7 +58,7 @@ fun LoginPasswordScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Register",
+                        text = stringResource(R.string.login),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
