@@ -78,7 +78,7 @@ fun RegistrationEmailScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Register",
+                        text = stringResource(R.string.register),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold

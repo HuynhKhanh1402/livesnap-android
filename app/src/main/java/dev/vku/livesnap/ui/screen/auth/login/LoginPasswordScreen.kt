@@ -1,8 +1,10 @@
-package dev.vku.livesnap.ui.screen.auth.register
+package dev.vku.livesnap.ui.screen.auth.login
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -35,16 +38,18 @@ import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-object RegistrationPasswordDestination : NavigationDestination {
-    override val route = "auth/register/password"
+object LoginPasswordDestination : NavigationDestination {
+    override val route: String = "auth/login/password"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationPasswordScreen(
-    viewModel: RegistrationViewModel,
+fun LoginPasswordScreen(
+    viewModel: LoginViewModel,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onForgotPassword: () -> Unit
 ) {
     val passwordVisible = remember { mutableStateOf(false) }
 
@@ -84,6 +89,7 @@ fun RegistrationPasswordScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
+
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
                 value = viewModel.password,
@@ -99,6 +105,15 @@ fun RegistrationPasswordScreen(
                         )
                     }
                 },
+                isError = viewModel.passwordError != null,
+                supportingText = {
+                    if (viewModel.passwordError != null) {
+                        Text(
+                            text = viewModel.passwordError!!,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -108,13 +123,25 @@ fun RegistrationPasswordScreen(
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary
                 )
             )
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.password_must_be_at_least_8_characters),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (viewModel.password.length >= 8) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = "Forgot password?",
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .clickable { onForgotPassword() },
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onNext,
                 enabled = viewModel.password.matches(Regex("^.{8,}$")),

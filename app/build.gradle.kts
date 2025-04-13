@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.material.icons.extended)
     ksp(libs.hilt.compiler)
     implementation(libs.lottie.compose)
     testImplementation(libs.junit)

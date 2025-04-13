@@ -24,4 +24,6 @@
     <string name="create_account">Create account</string>
     <string name="invalid_email_format">Invalid email format</string>
     <string name="username_invalid">Username must be at least 4 characters long and contain only letters or numbers.</string>
+    <string name="register">Register</string>
+    <string name="login">Login</string>
 </resources>
