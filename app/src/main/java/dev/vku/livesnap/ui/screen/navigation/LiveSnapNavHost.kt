@@ -27,8 +27,8 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
-import dev.vku.livesnap.ui.screen.home.HomeDestination
-import dev.vku.livesnap.ui.screen.home.HomeScreen
+import dev.vku.livesnap.ui.screen.home.NewHomeDestination
+import dev.vku.livesnap.ui.screen.home.NewHomeScreen
 
 @Composable
 fun LiveSnapNavHost(
@@ -45,7 +45,7 @@ fun LiveSnapNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AuthSelectDestination.route,
+            startDestination = NewHomeDestination.route,
             modifier = modifier.padding(innerPadding)
         ) {
             composable(route = AuthSelectDestination.route) {
@@ -105,12 +105,8 @@ fun LiveSnapNavHost(
                 )
             }
 
-            composable(route = HomeDestination.route) {
-                HomeScreen(
-                    onHistoryClick = { /* Điều hướng đến màn hình lịch sử nếu có */ },
-                    onProfileClick = { /* Điều hướng đến hồ sơ */ },
-                    onFriendClick = { /* Điều hướng đến bạn bè */ }
-                )
+            composable(route = NewHomeDestination.route) {
+                NewHomeScreen()
             }
         }
     }
