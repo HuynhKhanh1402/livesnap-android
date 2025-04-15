@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,16 +31,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.R
+import dev.vku.livesnap.ui.screen.auth.register.RegistrationResult
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+import kotlinx.coroutines.launch
 
 object LoginPasswordDestination : NavigationDestination {
     override val route: String = "auth/login/password"
@@ -51,7 +63,34 @@ fun LoginPasswordScreen(
     onNext: () -> Unit,
     onForgotPassword: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val passwordVisible = remember { mutableStateOf(false) }
+
+    val loginResult by viewModel.loginResult.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(loginResult) {
+        when (loginResult) {
+            is LoginResult.Success -> {
+                keyboardController?.hide()
+
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(context.getString(R.string.login_successful))
+                    viewModel.resetLoginResult()
+                }
+
+                onNext()
+            }
+            is LoginResult.Error -> {
+                snackbarHostState.showSnackbar((loginResult as LoginResult.Error).message)
+                viewModel.resetLoginResult()
+            }
+            else -> {
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -73,7 +112,9 @@ fun LoginPasswordScreen(
                     .background(MaterialTheme.colorScheme.primaryContainer)
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .padding(WindowInsets.ime.asPaddingValues())
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -143,7 +184,7 @@ fun LoginPasswordScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = onNext,
+                onClick = { viewModel.login() },
                 enabled = viewModel.password.matches(Regex("^.{8,}$")),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

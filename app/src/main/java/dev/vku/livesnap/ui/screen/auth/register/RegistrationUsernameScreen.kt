@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,15 +27,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+import kotlinx.coroutines.launch
 
 object RegistrationUserIdDestination : NavigationDestination {
     override val route = "auth/register/userId"
@@ -44,18 +47,27 @@ object RegistrationUserIdDestination : NavigationDestination {
 @Composable
 fun RegistrationUsernameScreen(
     viewModel: RegistrationViewModel,
-    navController: NavHostController,
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNext: () -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val registrationResult by viewModel.registrationResult.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(registrationResult) {
         when (registrationResult) {
             is RegistrationResult.Success -> {
-                snackbarHostState.showSnackbar(context.getString(R.string.registration_successful))
-                viewModel.resetRegistrationResult()
+                keyboardController?.hide()
+
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(context.getString(R.string.registration_successful))
+                    viewModel.resetRegistrationResult()
+                }
+
+                onNext()
             }
             is RegistrationResult.Error -> {
                 snackbarHostState.showSnackbar((registrationResult as RegistrationResult.Error).message)
@@ -92,7 +104,8 @@ fun RegistrationUsernameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .imePadding(),
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(128.dp))

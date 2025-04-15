@@ -55,7 +55,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-data object NewHomeDestination : NavigationDestination {
+data object HomeDestination : NavigationDestination {
     override val route = "home"
 }
 
@@ -116,7 +116,15 @@ fun NewHomeScreen() {
             Spacer(Modifier.height(48.dp))
 
             BottomBar(
-                isFlashOn = isFlashOn
+                isFlashOn = isFlashOn,
+                onToggleFlash = { isFlashOn = !isFlashOn },
+                onCameraFlip = {
+                    lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                        CameraSelector.LENS_FACING_FRONT
+                    } else {
+                        CameraSelector.LENS_FACING_BACK
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -187,13 +195,13 @@ fun TopBar() {
                     imageVector = Icons.Default.Person,
                     contentDescription = "Friends",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(20.dp)
                 )
 
                 Text(
                     text = "1 Bạn bè",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -275,6 +283,8 @@ fun CameraPreview(
 @Composable
 fun BottomBar(
     isFlashOn: Boolean = false,
+    onToggleFlash: () -> Unit = {},
+    onCameraFlip: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -289,7 +299,7 @@ fun BottomBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = {}) {
+        IconButton(onClick = onToggleFlash) {
             Icon(
                 imageVector = Icons.Default.FlashOn,
                 contentDescription = "Flash",
@@ -321,7 +331,7 @@ fun BottomBar(
             }
         }
 
-        IconButton(onClick = {}) {
+        IconButton(onClick = onCameraFlip) {
             Icon(
                 imageVector = Icons.Default.Cameraswitch,
                 contentDescription = "Flip camera",

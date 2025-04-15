@@ -1,5 +1,8 @@
 package dev.vku.livesnap.ui.screen.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,7 +30,7 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
-import dev.vku.livesnap.ui.screen.home.NewHomeDestination
+import dev.vku.livesnap.ui.screen.home.HomeDestination
 import dev.vku.livesnap.ui.screen.home.NewHomeScreen
 
 @Composable
@@ -45,7 +48,7 @@ fun LiveSnapNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NewHomeDestination.route,
+            startDestination = AuthSelectDestination.route,
             modifier = modifier.padding(innerPadding)
         ) {
             composable(route = AuthSelectDestination.route) {
@@ -80,9 +83,9 @@ fun LiveSnapNavHost(
             composable(route = RegistrationUserIdDestination.route) {
                 RegistrationUsernameScreen(
                     viewModel = registrationViewModel,
-                    navController = navController,
                     snackbarHostState = snackbarHostState,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onNext = { navController.navigate(HomeDestination.route) }
                 )
             }
 
@@ -100,12 +103,12 @@ fun LiveSnapNavHost(
                     viewModel = loginViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { },
+                    onNext = { navController.navigate(HomeDestination.route) },
                     onForgotPassword = { }
                 )
             }
 
-            composable(route = NewHomeDestination.route) {
+            composable(route = HomeDestination.route) {
                 NewHomeScreen()
             }
         }

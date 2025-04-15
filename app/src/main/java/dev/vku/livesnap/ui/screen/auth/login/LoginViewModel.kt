@@ -20,6 +20,12 @@ sealed class CheckEmailExistResult {
     data object Idle : CheckEmailExistResult()
 }
 
+sealed class LoginResult {
+    data object Success : LoginResult()
+    data class Error(val message: String) : LoginResult()
+    data object Idle : LoginResult()
+}
+
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val usersRepository: UsersRepository
@@ -52,6 +58,9 @@ class LoginViewModel @Inject constructor(
     private val _checkEmailExistResult = MutableStateFlow<CheckEmailExistResult>(CheckEmailExistResult.Idle)
     var checkEmailExistResult: StateFlow<CheckEmailExistResult> = _checkEmailExistResult
 
+    private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
+    var loginResult: StateFlow<LoginResult> = _loginResult
+
     private fun validateEmail(email: String): Boolean {
         val regex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")
         return regex.matches(email)
@@ -82,5 +91,30 @@ class LoginViewModel @Inject constructor(
 
     fun resetCheckEmailExistResult() {
         _checkEmailExistResult.value = CheckEmailExistResult.Idle
+    }
+
+    fun login() {
+        viewModelScope.launch {
+            _loginResult.value = LoginResult.Idle
+            isLoading = true
+            try {
+                val response = usersRepository.login(email, password)
+                if (response.code == 200) {
+                    _loginResult.value = LoginResult.Success
+                } else {
+                    _loginResult.value = LoginResult.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _loginResult.value =
+                    LoginResult.Error(e.message ?: "Unknown error")
+                Log.e("LoginViewModel", "Login failed: ${e.message}", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun resetLoginResult() {
+        _loginResult.value = LoginResult.Idle
     }
 }
