@@ -5,14 +5,18 @@ import dev.vku.livesnap.domain.model.User
 
 fun UserDTO.toDomain() = User(
     id = this.id,
-    name = this.name,
+    username = this.username,
     email = this.email,
-    avatarUrl = this.avatarUrl
+    firstName = this.firstName,
+    lastName = this.lastName,
+    avatar = this.avatar
 )
 
 fun User.toDTO() = UserDTO(
     id = this.id,
-    name = this.name,
+    username = this.username,
     email = this.email,
-    avatarUrl = this.avatarUrl
+    firstName = this.firstName,
+    lastName = this.lastName,
+    avatar = this.avatar
 )

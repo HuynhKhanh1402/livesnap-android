@@ -55,6 +55,8 @@ fun RegistrationUsernameScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val registrationResult by viewModel.registrationResult.collectAsState()
+    val loginResult by viewModel.loginResult.collectAsState()
+
     val context = LocalContext.current
 
     LaunchedEffect(registrationResult) {
@@ -67,7 +69,7 @@ fun RegistrationUsernameScreen(
                     viewModel.resetRegistrationResult()
                 }
 
-                onNext()
+                viewModel.login()
             }
             is RegistrationResult.Error -> {
                 snackbarHostState.showSnackbar((registrationResult as RegistrationResult.Error).message)
@@ -76,6 +78,20 @@ fun RegistrationUsernameScreen(
             else -> {
             }
         }
+    }
+
+    LaunchedEffect(loginResult) {
+        when (loginResult) {
+            is LoginResult.Success -> {
+                viewModel.resetLoginResult()
+                onNext()
+            }
+            is LoginResult.Error -> {
+                snackbarHostState.showSnackbar((registrationResult as RegistrationResult.Error).message)
+                viewModel.resetRegistrationResult()
+            }
+            else -> { }
+            }
     }
 
     Scaffold(

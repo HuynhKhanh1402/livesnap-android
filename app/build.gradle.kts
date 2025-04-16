@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     ksp(libs.hilt.compiler)
     implementation(libs.lottie.compose)
+    implementation(libs.datastore.preferences)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

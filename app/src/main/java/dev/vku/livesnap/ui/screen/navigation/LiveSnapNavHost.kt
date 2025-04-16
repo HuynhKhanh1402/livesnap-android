@@ -1,8 +1,5 @@
 package dev.vku.livesnap.ui.screen.navigation
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -16,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
+import dev.vku.livesnap.ui.screen.auth.AuthSelectViewModel
 import dev.vku.livesnap.ui.screen.auth.login.LoginEmailDestination
 import dev.vku.livesnap.ui.screen.auth.login.LoginEmailScreen
 import dev.vku.livesnap.ui.screen.auth.login.LoginPasswordDestination
@@ -40,6 +38,7 @@ fun LiveSnapNavHost(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val authSelectViewModel: AuthSelectViewModel = hiltViewModel()
     val registrationViewModel: RegistrationViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
 
@@ -53,8 +52,10 @@ fun LiveSnapNavHost(
         ) {
             composable(route = AuthSelectDestination.route) {
                 AuthSelectScreen(
+                    viewModel = authSelectViewModel,
                     onCreateAccountClick = { navController.navigate(RegistrationEmailDestination.route) },
-                    onLoginClick = { navController.navigate(LoginEmailDestination.route)}
+                    onLoginClick = { navController.navigate(LoginEmailDestination.route)},
+                    onAuthenticated = { navController.navigate(HomeDestination.route) }
                 )
             }
 
@@ -85,7 +86,9 @@ fun LiveSnapNavHost(
                     viewModel = registrationViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(HomeDestination.route) }
+                    onNext = {
+                        navController.navigate(HomeDestination.route)
+                    }
                 )
             }
 
