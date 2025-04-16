@@ -12,7 +12,7 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface ApiService {
-    @POST("users/register")
+    @POST("auth/register")
     suspend fun registerUser(@Body user: UserRegistrationRequest): UserRegistrationResponse
 
     @POST("users/check-email-exist")
@@ -21,7 +21,7 @@ interface ApiService {
     @POST("users/check-username-exist")
     suspend fun checkUsernameExist(@Body request: CheckUsernameExistRequest): CheckUsernameExistResponse
 
-    @POST("users/login")
+    @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
 }
