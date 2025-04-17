@@ -1,8 +1,6 @@
 package dev.vku.livesnap.ui.screen.navigation
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -44,7 +42,9 @@ fun LiveSnapNavHost(
     val loginViewModel: LoginViewModel = hiltViewModel()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier
+            .imePadding()
     ) { innerPadding ->
         NavHost(
             navController = navController,
