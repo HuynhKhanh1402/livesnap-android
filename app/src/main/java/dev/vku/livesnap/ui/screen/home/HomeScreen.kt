@@ -2,7 +2,6 @@ package dev.vku.livesnap.ui.screen.home
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -35,21 +34,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
@@ -60,33 +54,27 @@ data object HomeDestination : NavigationDestination {
 }
 
 @Composable
-fun NewHomeScreen() {
-    val context = LocalContext.current
+fun NewHomeScreen(
+    viewModel: HomeViewModel
+) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var hasCameraPermission by remember { mutableStateOf(false) }
-    var isFlashOn by remember { mutableStateOf(false) }
-    var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
+    val hasCameraPermission by viewModel.hasCameraPermission.collectAsState()
+    val isFlashOn by viewModel.isFlashOn.collectAsState()
+    val lensFacing by viewModel.lensFacing.collectAsState()
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        hasCameraPermission = isGranted
+    ) { granted ->
+        viewModel.updateCameraPermission(granted)
     }
 
     LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            hasCameraPermission = true
-        } else {
+        viewModel.checkCameraPermission()
+        if (!hasCameraPermission) {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
-
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
-    val preview = remember { androidx.camera.core.Preview.Builder().build() }
-    val imageCapture = remember { ImageCapture.Builder().build() }
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     Scaffold(
@@ -107,24 +95,18 @@ fun NewHomeScreen() {
             CameraPreview(
                 hasCameraPermission = hasCameraPermission,
                 lensFacing = lensFacing,
-                cameraProviderFuture = cameraProviderFuture,
+                cameraProviderFuture = viewModel.cameraProviderFuture,
                 lifecycleOwner = lifecycleOwner,
-                preview = preview,
-                imageCapture = imageCapture
+                preview = viewModel.preview,
+                imageCapture = viewModel.imageCapture
             )
 
             Spacer(Modifier.height(48.dp))
 
             BottomBar(
                 isFlashOn = isFlashOn,
-                onToggleFlash = { isFlashOn = !isFlashOn },
-                onCameraFlip = {
-                    lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                        CameraSelector.LENS_FACING_FRONT
-                    } else {
-                        CameraSelector.LENS_FACING_BACK
-                    }
-                }
+                onToggleFlash = viewModel::toggleFlash,
+                onCameraFlip = viewModel::flipCamera
             )
 
             Spacer(modifier = Modifier.weight(1f))

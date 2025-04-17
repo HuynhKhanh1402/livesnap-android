@@ -1,5 +1,7 @@
 package dev.vku.livesnap.ui.screen.navigation
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -29,6 +31,7 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
 import dev.vku.livesnap.ui.screen.home.HomeDestination
+import dev.vku.livesnap.ui.screen.home.HomeViewModel
 import dev.vku.livesnap.ui.screen.home.NewHomeScreen
 
 @Composable
@@ -42,8 +45,13 @@ fun LiveSnapNavHost(
     val registrationViewModel: RegistrationViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
 
+    val homeViewModel: HomeViewModel = hiltViewModel()
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -110,7 +118,9 @@ fun LiveSnapNavHost(
             }
 
             composable(route = HomeDestination.route) {
-                NewHomeScreen()
+                NewHomeScreen(
+                    viewModel = homeViewModel
+                )
             }
         }
     }

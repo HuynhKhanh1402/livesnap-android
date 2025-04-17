@@ -6,13 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -46,7 +42,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.R
-import dev.vku.livesnap.ui.screen.auth.register.RegistrationResult
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import kotlinx.coroutines.launch
 
@@ -112,9 +107,7 @@ fun LoginPasswordScreen(
                     .background(MaterialTheme.colorScheme.primaryContainer)
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
-        modifier = Modifier
-            .padding(WindowInsets.ime.asPaddingValues())
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
