@@ -27,6 +27,12 @@ sealed class RegistrationResult {
     data object Idle : RegistrationResult()
 }
 
+sealed class LoginResult {
+    data object Success : LoginResult()
+    data class Error(val message: String) : LoginResult()
+    data object Idle : LoginResult()
+}
+
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
     private val usersRepository: UsersRepository
@@ -67,6 +73,9 @@ class RegistrationViewModel @Inject constructor(
 
     private val _registrationResult = MutableStateFlow<RegistrationResult>(RegistrationResult.Idle)
     var registrationResult: StateFlow<RegistrationResult> = _registrationResult
+
+    private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
+    var loginResult: StateFlow<LoginResult> = _loginResult
 
     fun setFirstNameField(first: String) {
         firstName = first
@@ -173,5 +182,30 @@ class RegistrationViewModel @Inject constructor(
 
     fun resetRegistrationResult() {
         _registrationResult.value = RegistrationResult.Idle
+    }
+
+    fun login() {
+        viewModelScope.launch {
+            _loginResult.value = LoginResult.Idle
+            isLoading = true
+
+            try {
+                val response = usersRepository.login(email, password)
+                if (response.code == 200) {
+                    _loginResult.value = LoginResult.Success
+                } else {
+                    _registrationResult.value = RegistrationResult.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _registrationResult.value = RegistrationResult.Error(e.message ?: "Unknown error")
+                Log.e("RegistrationViewModel", "Login failed: ${e.message}", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun resetLoginResult() {
+        _loginResult.value = LoginResult.Idle
     }
 }

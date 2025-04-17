@@ -4,9 +4,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.remote.ApiService
+import dev.vku.livesnap.data.remote.AuthInterceptor
 import dev.vku.livesnap.data.repository.DefaultUsersRepository
 import dev.vku.livesnap.data.repository.UsersRepository
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -17,9 +20,24 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit {
+    fun provideAuthInterceptor(tokenManager: TokenManager): AuthInterceptor {
+        return AuthInterceptor { tokenManager.getToken() }
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl("http://127.0.0.1:3000/api/")
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
