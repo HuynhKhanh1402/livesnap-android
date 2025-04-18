@@ -7,12 +7,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-fun SnapDTO.toSnap(): Snap {
+fun SnapDTO.toDomain(): Snap {
     return Snap(
         id = this.id,
-        userId = this.userId,
         caption = this.caption,
         image = this.image,
+        user = this.user.toDomain(),
+        isOwner = this.isOwner,
         createdAt = convertStringToDate(this.createdAt)
     )
 }
@@ -20,9 +21,10 @@ fun SnapDTO.toSnap(): Snap {
 fun Snap.toSnapDTO(): SnapDTO {
     return SnapDTO(
         id = this.id,
-        userId = this.userId,
         caption = this.caption,
         image = this.image,
+        user = this.user.toDTO(),
+        isOwner = this.isOwner,
         createdAt = convertDateToString(this.createdAt)
     )
 }
@@ -42,7 +44,7 @@ private fun convertDateToString(date: Date): String {
 
 
 fun List<SnapDTO>.toSnapList(): List<Snap> {
-    return this.map { it.toSnap() }
+    return this.map { it.toDomain() }
 }
 
 fun List<Snap>.toSnapDTOList(): List<SnapDTO> {

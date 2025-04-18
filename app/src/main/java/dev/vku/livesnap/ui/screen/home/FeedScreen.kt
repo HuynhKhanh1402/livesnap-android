@@ -46,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -62,6 +63,10 @@ import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Snap
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalSnapperApi::class)
 @Composable
@@ -139,7 +144,6 @@ fun Feed(
 ) {
     Column(
         modifier = modifier
-//            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -152,7 +156,12 @@ fun Feed(
 
         Spacer(Modifier.height(32.dp))
 
-        FeedPhotoFooter()
+        FeedPhotoFooter(
+            isOwner = snap.isOwner,
+            avatar = snap.user.avatar,
+            name = "${snap.user.firstName} ${snap.user.lastName}".trim(),
+            createdAt = snap.createdAt
+        )
 
         Spacer(
             modifier = Modifier.weight(1f)
@@ -169,8 +178,12 @@ fun Feed(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            ReactionBar()
-//            ActivityBar()
+
+            if (snap.isOwner) {
+                ActivityBar()
+            } else {
+                ReactionBar()
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -360,13 +373,16 @@ fun FeedPhoto(image: String, caption: String) {
 }
 
 @Composable
-fun FeedPhotoFooter() {
+fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: Date) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(R.drawable.smartphone),
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(avatar)
+                .crossfade(false)
+                .build(),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
@@ -375,7 +391,7 @@ fun FeedPhotoFooter() {
         )
 
         Text(
-            text = "Me",
+            text = if (isOwner) "Me" else name.trim(),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -384,7 +400,7 @@ fun FeedPhotoFooter() {
         )
 
         Text(
-            text = "2m",
+            text = formatTimeAgo(createdAt),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
@@ -571,6 +587,26 @@ fun ActionBar() {
                     .size(32.dp),
                 tint = MaterialTheme.colorScheme.onBackground,
             )
+        }
+    }
+}
+
+private fun formatTimeAgo(date: Date): String {
+    val now = Date()
+    val diffMs = now.time - date.time
+
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(diffMs)
+    val hours = TimeUnit.MILLISECONDS.toHours(diffMs)
+    val days = TimeUnit.MILLISECONDS.toDays(diffMs)
+
+    return when {
+        minutes <= 0 -> "Just now"
+        minutes < 60 -> "${minutes}m"
+        hours < 24 -> "${hours}h"
+        days <= 7 -> "${days}d"
+        else -> {
+            val dateFormat = SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH)
+            dateFormat.format(date)
         }
     }
 }
