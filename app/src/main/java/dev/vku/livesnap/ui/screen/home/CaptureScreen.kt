@@ -49,13 +49,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-data object HomeDestination : NavigationDestination {
-    override val route = "home"
+object CaptureDestination : NavigationDestination {
+    override val route = "capture"
 }
 
 @Composable
-fun NewHomeScreen(
-    viewModel: HomeViewModel
+fun CaptureScreen(
+    viewModel: CaptureViewModel
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -88,7 +88,7 @@ fun NewHomeScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopBar()
+            CaptureTopBar()
 
             Spacer(Modifier.height(64.dp))
 
@@ -103,7 +103,7 @@ fun NewHomeScreen(
 
             Spacer(Modifier.height(48.dp))
 
-            BottomBar(
+            CaptureBottomBar(
                 isFlashOn = isFlashOn,
                 onToggleFlash = viewModel::toggleFlash,
                 onCameraFlip = viewModel::flipCamera
@@ -123,7 +123,7 @@ fun NewHomeScreen(
 }
 
 @Composable
-fun TopBar() {
+fun CaptureTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,7 +263,7 @@ fun CameraPreview(
 }
 
 @Composable
-fun BottomBar(
+fun CaptureBottomBar(
     isFlashOn: Boolean = false,
     onToggleFlash: () -> Unit = {},
     onCameraFlip: () -> Unit = {},

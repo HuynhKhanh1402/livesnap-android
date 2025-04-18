@@ -30,9 +30,9 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
-import dev.vku.livesnap.ui.screen.home.HomeDestination
-import dev.vku.livesnap.ui.screen.home.HomeViewModel
-import dev.vku.livesnap.ui.screen.home.NewHomeScreen
+import dev.vku.livesnap.ui.screen.home.CaptureDestination
+import dev.vku.livesnap.ui.screen.home.CaptureViewModel
+import dev.vku.livesnap.ui.screen.home.Feed
 
 @Composable
 fun LiveSnapNavHost(
@@ -45,7 +45,7 @@ fun LiveSnapNavHost(
     val registrationViewModel: RegistrationViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
 
-    val homeViewModel: HomeViewModel = hiltViewModel()
+    val captureViewModel: CaptureViewModel = hiltViewModel()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -63,7 +63,7 @@ fun LiveSnapNavHost(
                     viewModel = authSelectViewModel,
                     onCreateAccountClick = { navController.navigate(RegistrationEmailDestination.route) },
                     onLoginClick = { navController.navigate(LoginEmailDestination.route)},
-                    onAuthenticated = { navController.navigate(HomeDestination.route) }
+                    onAuthenticated = { navController.navigate(CaptureDestination.route) }
                 )
             }
 
@@ -94,7 +94,7 @@ fun LiveSnapNavHost(
                     viewModel = registrationViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(HomeDestination.route) }
+                    onNext = { navController.navigate(CaptureDestination.route) }
                 )
             }
 
@@ -112,15 +112,14 @@ fun LiveSnapNavHost(
                     viewModel = loginViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(HomeDestination.route) },
+                    onNext = { navController.navigate(CaptureDestination.route) },
                     onForgotPassword = { }
                 )
             }
 
-            composable(route = HomeDestination.route) {
-                NewHomeScreen(
-                    viewModel = homeViewModel
-                )
+            composable(route = CaptureDestination.route) {
+//                CaptureScreen(viewModel = captureViewModel)
+                Feed()
             }
         }
     }

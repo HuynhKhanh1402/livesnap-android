@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class CaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _hasCameraPermission = MutableStateFlow(false)

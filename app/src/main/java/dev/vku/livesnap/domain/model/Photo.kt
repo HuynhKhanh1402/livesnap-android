@@ -4,8 +4,8 @@ import java.util.Date
 
 data class Photo(
     val photoId: String,
-    val senderId: String,
-    val receiverId: String,
-    val url: String,
-    val timestamp: Date
+    val userId: String,
+    val caption: String,
+    val image: String,
+    val createdAt: Date
 )

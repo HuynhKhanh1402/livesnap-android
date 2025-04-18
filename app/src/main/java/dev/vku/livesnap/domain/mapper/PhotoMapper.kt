@@ -6,16 +6,16 @@ import java.util.Date
 
 fun PhotoDTO.toDomain() = Photo(
     photoId = this.photoId,
-    senderId = this.senderId,
-    receiverId = this.receiverId,
-    url = this.url,
-    timestamp = Date(this.timestamp)
+    userId = this.userId,
+    caption = this.caption,
+    image = this.image,
+    createdAt = Date(this.createdAt)
 )
 
 fun Photo.toDTO() = PhotoDTO(
     photoId = this.photoId,
-    senderId = this.senderId,
-    receiverId = this.receiverId,
-    url = this.url,
-    timestamp = this.timestamp.time
+    userId = this.userId,
+    caption = this.caption,
+    image = this.image,
+    createdAt = this.createdAt.time
 )

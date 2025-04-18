@@ -9,11 +9,14 @@ lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
 composeBom = "2025.04.00"
 retrofit = "2.11.0"
+coil = "2.7.0"
 hilt = "2.51.1"
 ksp = "2.1.0-1.0.29"
 uiTextGoogleFonts = "1.7.8"
 navigation = "2.8.9"
 camera = "1.4.2"
+accompanist-pager = "0.35.1-alpha"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,7 +37,8 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-convertor-gson = {group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit"}
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version = "4.12.0" }
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.7.0"}
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}
+coil-svg = { group = "io.coil-kt", name = "coil-svg", version.ref = "coil"}
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
@@ -46,6 +50,9 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camera" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camera" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version = "1.1.4" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version = "1.7.8" }
+accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanist-pager" }
+accompanist-pager-indicators = { group = "com.google.accompanist", name = "accompanist-pager-indicators", version.ref = "accompanist-pager" }
 
 
 [plugins]
