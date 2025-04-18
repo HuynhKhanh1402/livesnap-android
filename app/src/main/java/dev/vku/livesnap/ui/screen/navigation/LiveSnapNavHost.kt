@@ -32,7 +32,8 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
 import dev.vku.livesnap.ui.screen.home.CaptureDestination
 import dev.vku.livesnap.ui.screen.home.CaptureViewModel
-import dev.vku.livesnap.ui.screen.home.Feed
+import dev.vku.livesnap.ui.screen.home.FeedScreen
+import dev.vku.livesnap.ui.screen.home.FeedViewModel
 
 @Composable
 fun LiveSnapNavHost(
@@ -46,6 +47,7 @@ fun LiveSnapNavHost(
     val loginViewModel: LoginViewModel = hiltViewModel()
 
     val captureViewModel: CaptureViewModel = hiltViewModel()
+    val feedViewModel: FeedViewModel = hiltViewModel()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -119,7 +121,7 @@ fun LiveSnapNavHost(
 
             composable(route = CaptureDestination.route) {
 //                CaptureScreen(viewModel = captureViewModel)
-                Feed()
+                FeedScreen(feedViewModel)
             }
         }
     }

@@ -13,52 +13,133 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import dev.chrisbanes.snapper.ExperimentalSnapperApi
+import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.R
-import dev.vku.snaplive.domain.model.Photo
-import java.util.Date
+import dev.vku.livesnap.domain.model.Snap
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
-@Preview
+@OptIn(ExperimentalSnapperApi::class)
+@Composable
+fun FeedScreen(
+    viewModel: FeedViewModel
+) {
+    val snaps = viewModel.snaps
+    val isLoading = viewModel.isLoading
+    val listState = rememberLazyListState()
+
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
+    val flingBehavior = rememberSnapperFlingBehavior(
+        lazyListState = listState,
+        snapIndex = {_,  initialIndex, targetIndex ->
+            when {
+                targetIndex > initialIndex -> initialIndex + 1
+                targetIndex < initialIndex -> initialIndex - 1
+                else -> initialIndex
+            }
+        },
+    )
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
+        flingBehavior = flingBehavior
+    ) {
+        items(snaps) {snap ->
+            Feed(
+                snap = snap,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(screenHeight)
+            )
+        }
+
+        if (isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (snaps.isEmpty()) {
+            viewModel.loadSnaps()
+        }
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            .map { visibleItems -> visibleItems.lastOrNull()?.index ?: 0 }
+            .distinctUntilChanged()
+            .collect { lastVisibleItemIndex ->
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItemIndex >= totalItems - 3 && !isLoading) {
+                    viewModel.loadSnaps()
+                }
+            }
+    }
+}
+
 @Composable
 fun Feed(
     modifier: Modifier = Modifier,
-    feed: Photo = Photo(photoId = "67fa7afb7c9ee17b84aacb76", userId = "67f7aa996281f41c78c45da1", caption = "neww", image = "https://res.cloudinary.com/dlnpm0kdo/image/upload/v1744468730/e9dxxjjl2b3ggco7imft.jpg", createdAt = Date())
+    snap: Snap
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
+//            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -67,7 +148,7 @@ fun Feed(
 
         Spacer(Modifier.height(64.dp))
 
-        FeedPhoto(feed.image, feed.caption)
+        FeedPhoto(snap.image, snap.caption)
 
         Spacer(Modifier.height(32.dp))
 
@@ -88,8 +169,8 @@ fun Feed(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-//            ReactionBar()
-            ActivityBar()
+            ReactionBar()
+//            ActivityBar()
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -193,11 +274,11 @@ fun FeedTopBar() {
 
 @Composable
 fun FeedPhoto(image: String, caption: String) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.image_loading))
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading))
     val progress by animateLottieCompositionAsState(
         composition = composition,
         isPlaying = true,
-        iterations = LottieConstants.IterateForever // Lặp vô hạn cho loading
+        iterations = LottieConstants.IterateForever
     )
 
     Box(
@@ -209,34 +290,37 @@ fun FeedPhoto(image: String, caption: String) {
                 shape = RoundedCornerShape(percent = 12)
             ),
     ) {
-        val painter = rememberAsyncImagePainter(
-            ImageRequest.Builder(LocalContext.current)
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
                 .data(image)
                 .crossfade(true)
-                .build()
-        )
-
-        when (painter.state) {
-            is AsyncImagePainter.State.Loading -> {
-                LottieAnimation(
-                    composition = composition,
-                    progress = { progress },
-                    modifier = Modifier
-                        .size(50.dp)
-                        .align(Alignment.Center)
-                )
-            }
-            is AsyncImagePainter.State.Success -> {
-                Image(
-                    painter = painter,
-                    contentDescription = "Friend's photo",
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            is AsyncImagePainter.State.Error -> {
-                Text("Failed to load image", modifier = Modifier.align(Alignment.Center))
-            }
-            else -> {
+                .memoryCachePolicy(CachePolicy.DISABLED)
+                .diskCachePolicy(CachePolicy.DISABLED)
+                .build(),
+            contentDescription = "Feed photo",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(percent = 12)),
+        ) {
+            when (painter.state) {
+                is AsyncImagePainter.State.Loading -> {
+                    LottieAnimation(
+                        composition = composition,
+                        progress = { progress },
+                        modifier = Modifier.size(150.dp)
+                    )
+                }
+                is AsyncImagePainter.State.Error -> {
+                    Icon(
+                        painter = painterResource(R.drawable.error_image),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(48.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                else -> SubcomposeAsyncImageContent()
             }
         }
 
@@ -253,6 +337,7 @@ fun FeedPhoto(image: String, caption: String) {
             ) {
                 Text(
                     text = caption,
+                    textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold,
@@ -290,7 +375,7 @@ fun FeedPhotoFooter() {
         )
 
         Text(
-            text = "Dưa",
+            text = "Me",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -361,13 +446,13 @@ fun ReactionBar() {
                         .clickable(onClick = {})
                 )
 
-                Image(
-                    painter = painterResource(id = R.drawable.smile_plus),
-                    contentDescription = "More emoji",
+                Icon(
+                    imageVector = Icons.Filled.AddReaction,
+                    contentDescription = "Add reaction",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier
-                        .size(30.dp)
-                        .padding(bottom = 3.dp),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSecondaryContainer),
+                        .size(28.dp)
+                        .clickable(onClick = {})
                 )
             }
         }
