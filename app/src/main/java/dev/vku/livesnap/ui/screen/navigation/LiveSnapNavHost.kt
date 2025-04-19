@@ -3,16 +3,24 @@ package dev.vku.livesnap.ui.screen.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import dev.vku.livesnap.core.common.AuthEventBus
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
 import dev.vku.livesnap.ui.screen.auth.AuthSelectViewModel
@@ -30,11 +38,7 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
-import dev.vku.livesnap.ui.screen.home.CaptureDestination
-import dev.vku.livesnap.ui.screen.home.CaptureScreen
 import dev.vku.livesnap.ui.screen.home.CaptureViewModel
-import dev.vku.livesnap.ui.screen.home.FeedDestination
-import dev.vku.livesnap.ui.screen.home.FeedScreen
 import dev.vku.livesnap.ui.screen.home.FeedViewModel
 import dev.vku.livesnap.ui.screen.home.HomeDestination
 import dev.vku.livesnap.ui.screen.home.HomeScreen
@@ -52,6 +56,37 @@ fun LiveSnapNavHost(
 
     val captureViewModel: CaptureViewModel = hiltViewModel()
     val feedViewModel: FeedViewModel = hiltViewModel()
+
+    var showSessionExpiredDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        AuthEventBus.events.collect { event ->
+            when (event) {
+                is AuthEventBus.AuthEvent.TokenExpired -> {
+                    showSessionExpiredDialog = true
+                }
+            }
+        }
+    }
+
+    if (showSessionExpiredDialog) {
+        AlertDialog(
+            onDismissRequest = {  },
+            title = { Text("Session Expired") },
+            text = { Text("Your session has expired. Please log in again.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    authSelectViewModel.clearToken()
+                    showSessionExpiredDialog = false
+                    navController.navigate(AuthSelectDestination.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -100,7 +135,7 @@ fun LiveSnapNavHost(
                     viewModel = registrationViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(CaptureDestination.route) }
+                    onNext = { navController.navigate(HomeDestination.route) }
                 )
             }
 
@@ -118,23 +153,16 @@ fun LiveSnapNavHost(
                     viewModel = loginViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(CaptureDestination.route) },
+                    onNext = { navController.navigate(HomeDestination.route) },
                     onForgotPassword = { }
                 )
-            }
-
-            composable(route = CaptureDestination.route) {
-                CaptureScreen(viewModel = captureViewModel)
-            }
-
-            composable(route = FeedDestination.route) {
-                FeedScreen(feedViewModel)
             }
 
             composable(route = HomeDestination.route) {
                 HomeScreen(
                     captureViewModel = captureViewModel,
-                    feedViewModel = feedViewModel
+                    feedViewModel = feedViewModel,
+                    snackbarHostState = snackbarHostState
                 )
             }
         }

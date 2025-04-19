@@ -47,11 +47,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
-import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
-
-object CaptureDestination : NavigationDestination {
-    override val route = "capture"
-}
 
 @Composable
 fun CaptureScreen(

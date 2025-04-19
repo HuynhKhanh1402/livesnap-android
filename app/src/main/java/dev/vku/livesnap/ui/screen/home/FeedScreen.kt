@@ -25,13 +25,17 @@ import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -59,9 +63,9 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
+import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Snap
-import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -69,15 +73,14 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-object FeedDestination : NavigationDestination {
-    override val route = "feed"
-}
-
 @OptIn(ExperimentalSnapperApi::class)
 @Composable
 fun FeedScreen(
-    viewModel: FeedViewModel
+    viewModel: FeedViewModel,
+    snackbarHostState: SnackbarHostState,
 ) {
+    val loadSnapResult by viewModel.loadSnapResult.collectAsState()
+
     val snaps = viewModel.snaps
     val isLoading = viewModel.isLoading
     val listState = rememberLazyListState()
@@ -95,6 +98,24 @@ fun FeedScreen(
         },
     )
 
+    LaunchedEffect(loadSnapResult) {
+        when(loadSnapResult) {
+            is LoadSnapResult.Error -> {
+                snackbarHostState.showSnackbar((loadSnapResult as LoadSnapResult.Error).message)
+                viewModel.resetLoadSnapResult()
+            }
+            else -> {}
+        }
+    }
+
+    if (!viewModel.isFirstLoad && snaps.isEmpty()) {
+        EmptyFeed(
+            onInviteClick = {
+            },
+            onCaptureClick = {}
+        )
+    }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxWidth(),
@@ -111,14 +132,7 @@ fun FeedScreen(
 
         if (isLoading) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                LoadingOverlay()
             }
         }
     }
@@ -592,6 +606,56 @@ fun ActionBar() {
                     .size(32.dp),
                 tint = MaterialTheme.colorScheme.onBackground,
             )
+        }
+    }
+}
+
+@Composable
+fun EmptyFeed(
+    onInviteClick: () -> Unit,
+    onCaptureClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.PhotoCamera,
+            contentDescription = "Empty Feed Icon",
+            modifier = Modifier
+                .size(96.dp)
+                .padding(bottom = 24.dp),
+            tint = Color.Gray
+        )
+
+        Text(
+            text = "Nothing here yet!",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Your friends haven’t posted anything.\nBe the first to share a moment!",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(onClick = onCaptureClick) {
+            Text("Take a photo")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TextButton(onClick = onInviteClick) {
+            Text("Invite friends")
         }
     }
 }
