@@ -31,7 +31,9 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
 import dev.vku.livesnap.ui.screen.home.CaptureDestination
+import dev.vku.livesnap.ui.screen.home.CaptureScreen
 import dev.vku.livesnap.ui.screen.home.CaptureViewModel
+import dev.vku.livesnap.ui.screen.home.FeedDestination
 import dev.vku.livesnap.ui.screen.home.FeedScreen
 import dev.vku.livesnap.ui.screen.home.FeedViewModel
 
@@ -120,7 +122,10 @@ fun LiveSnapNavHost(
             }
 
             composable(route = CaptureDestination.route) {
-//                CaptureScreen(viewModel = captureViewModel)
+                CaptureScreen(viewModel = captureViewModel)
+            }
+
+            composable(route = FeedDestination.route) {
                 FeedScreen(feedViewModel)
             }
         }

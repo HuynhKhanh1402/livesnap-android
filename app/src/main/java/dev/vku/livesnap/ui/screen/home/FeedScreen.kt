@@ -61,12 +61,17 @@ import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+
+object FeedDestination : NavigationDestination {
+    override val route = "feed"
+}
 
 @OptIn(ExperimentalSnapperApi::class)
 @Composable
