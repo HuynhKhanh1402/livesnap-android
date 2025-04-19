@@ -36,6 +36,8 @@ import dev.vku.livesnap.ui.screen.home.CaptureViewModel
 import dev.vku.livesnap.ui.screen.home.FeedDestination
 import dev.vku.livesnap.ui.screen.home.FeedScreen
 import dev.vku.livesnap.ui.screen.home.FeedViewModel
+import dev.vku.livesnap.ui.screen.home.HomeDestination
+import dev.vku.livesnap.ui.screen.home.HomeScreen
 
 @Composable
 fun LiveSnapNavHost(
@@ -67,7 +69,7 @@ fun LiveSnapNavHost(
                     viewModel = authSelectViewModel,
                     onCreateAccountClick = { navController.navigate(RegistrationEmailDestination.route) },
                     onLoginClick = { navController.navigate(LoginEmailDestination.route)},
-                    onAuthenticated = { navController.navigate(CaptureDestination.route) }
+                    onAuthenticated = { navController.navigate(HomeDestination.route) }
                 )
             }
 
@@ -127,6 +129,13 @@ fun LiveSnapNavHost(
 
             composable(route = FeedDestination.route) {
                 FeedScreen(feedViewModel)
+            }
+
+            composable(route = HomeDestination.route) {
+                HomeScreen(
+                    captureViewModel = captureViewModel,
+                    feedViewModel = feedViewModel
+                )
             }
         }
     }
