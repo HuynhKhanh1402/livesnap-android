@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -17,6 +18,7 @@ fun HomeScreen(
     captureViewModel: CaptureViewModel,
     feedViewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
+    onImageCaptured: (Uri) -> Unit
 ) {
     val pagerState = rememberPagerState(
         pageCount = { 2 }
@@ -27,7 +29,10 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize()
     ) { page ->
         when (page) {
-            0 -> CaptureScreen(captureViewModel)
+            0 -> CaptureScreen(
+                viewModel = captureViewModel,
+                onImageCaptured = onImageCaptured
+            )
             1 -> FeedScreen(
                 viewModel = feedViewModel,
                 snackbarHostState = snackbarHostState

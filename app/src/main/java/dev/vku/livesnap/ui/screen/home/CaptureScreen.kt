@@ -2,6 +2,7 @@ package dev.vku.livesnap.ui.screen.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -9,6 +10,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,7 +52,8 @@ import com.google.common.util.concurrent.ListenableFuture
 
 @Composable
 fun CaptureScreen(
-    viewModel: CaptureViewModel
+    viewModel: CaptureViewModel,
+    onImageCaptured: (Uri) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -64,10 +67,19 @@ fun CaptureScreen(
         viewModel.updateCameraPermission(granted)
     }
 
+    val capturedImageUri by viewModel.capturedImageUri.collectAsState()
+
     LaunchedEffect(Unit) {
         viewModel.checkCameraPermission()
         if (!hasCameraPermission) {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    LaunchedEffect(capturedImageUri) {
+        capturedImageUri?.let { uri ->
+            onImageCaptured(uri)
+            viewModel.resetCapturedImageURI()
         }
     }
 
@@ -101,7 +113,8 @@ fun CaptureScreen(
             CaptureBottomBar(
                 isFlashOn = isFlashOn,
                 onToggleFlash = viewModel::toggleFlash,
-                onCameraFlip = viewModel::flipCamera
+                onCameraFlip = viewModel::flipCamera,
+                onCapture = viewModel::takePhoto
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -262,6 +275,7 @@ fun CaptureBottomBar(
     isFlashOn: Boolean = false,
     onToggleFlash: () -> Unit = {},
     onCameraFlip: () -> Unit = {},
+    onCapture: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -289,7 +303,10 @@ fun CaptureBottomBar(
             modifier = Modifier
                 .size(90.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable(
+                    onClick = onCapture
+                ),
             contentAlignment = Alignment.Center
         ) {
             Box(

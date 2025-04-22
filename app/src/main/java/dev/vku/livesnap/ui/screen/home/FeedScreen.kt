@@ -412,7 +412,7 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: 
         Text(
             text = if (isOwner) "Me" else name.trim(),
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.W700,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .padding(start = 8.dp)
@@ -422,6 +422,7 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: 
             text = formatTimeAgo(createdAt),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.W500,
             modifier = Modifier
                 .padding(start = 8.dp)
         )

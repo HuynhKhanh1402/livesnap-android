@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.navigation
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -16,10 +17,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import dev.vku.livesnap.core.common.AuthEventBus
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
@@ -42,6 +46,9 @@ import dev.vku.livesnap.ui.screen.home.CaptureViewModel
 import dev.vku.livesnap.ui.screen.home.FeedViewModel
 import dev.vku.livesnap.ui.screen.home.HomeDestination
 import dev.vku.livesnap.ui.screen.home.HomeScreen
+import dev.vku.livesnap.ui.screen.home.UploadSnapDestination
+import dev.vku.livesnap.ui.screen.home.UploadSnapScreen
+import dev.vku.livesnap.ui.screen.home.UploadSnapViewModel
 
 @Composable
 fun LiveSnapNavHost(
@@ -162,8 +169,35 @@ fun LiveSnapNavHost(
                 HomeScreen(
                     captureViewModel = captureViewModel,
                     feedViewModel = feedViewModel,
-                    snackbarHostState = snackbarHostState
+                    snackbarHostState = snackbarHostState,
+                    onImageCaptured = { uri ->
+                        navController.navigate("upload?uri=${uri}")
+                    }
                 )
+            }
+
+            composable(
+                route = UploadSnapDestination.route,
+                arguments = listOf(navArgument("uri") { type = NavType.StringType })
+            ) {
+                val uri = it.arguments?.getString("uri")?.toUri()
+                uri?.let {
+                    val uploadSnapViewModel: UploadSnapViewModel = hiltViewModel()
+                    UploadSnapScreen(
+                        viewModel = uploadSnapViewModel,
+                        imageUri = uri,
+                        snackbarHostState = snackbarHostState,
+                        onBack = {
+                            Log.e("UploadSnapScreen", "onBack clicked")
+                            navController.popBackStack()
+                        },
+                        onUploaded = {
+                            navController.navigate(HomeDestination.route) {
+                                popUpTo(HomeDestination.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
