@@ -9,6 +9,7 @@ import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
 import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
+import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -46,5 +47,6 @@ interface ApiService {
         @Part("caption") caption: RequestBody
     ): Response<UploadSnapResponse>
 
-
+    @GET("users/detail")
+    suspend fun fetchUserDetail(): Response<UserDetailResponse>
 }

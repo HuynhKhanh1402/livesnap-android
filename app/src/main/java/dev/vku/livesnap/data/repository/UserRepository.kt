@@ -8,13 +8,16 @@ import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
+import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
+import retrofit2.Response
 
 interface UsersRepository {
     suspend fun registerUser(user: UserRegistrationRequest): UserRegistrationResponse
     suspend fun checkEmailExist(email: String): CheckEmailExistResponse
     suspend fun checkUsernameExist(username: String): CheckUsernameExistResponse
     suspend fun login(email: String, password: String): LoginResponse
+    suspend fun fetchUserDetail(): Response<UserDetailResponse>
 }
 
 class DefaultUsersRepository(
@@ -35,4 +38,9 @@ class DefaultUsersRepository(
     override suspend fun login(email: String, password: String): LoginResponse {
         return apiService.login(LoginRequest(email, password))
     }
+
+    override suspend fun fetchUserDetail(): Response<UserDetailResponse> {
+        return apiService.fetchUserDetail()
+    }
+
 }

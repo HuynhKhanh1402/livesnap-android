@@ -1,0 +1,578 @@
+package dev.vku.livesnap.ui.screen.profile
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import dev.vku.livesnap.LoadingOverlay
+import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+
+object UserProfileDestination: NavigationDestination {
+    override val route: String = "profile"
+}
+
+@Composable
+fun UserProfileScreen(
+    viewModel: UserProfileViewModel,
+    snackbarHostState: SnackbarHostState,
+    onLoggedOut: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    val fetchUserResult by viewModel.fetchUserResult.collectAsState()
+    val logoutResult by viewModel.logoutResult.collectAsState()
+    val isLoading by viewModel.loadingState.collectAsState()
+
+    var user by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(fetchUserResult) {
+        when (fetchUserResult) {
+            is FetchUserResult.Success -> {
+                user = (fetchUserResult as FetchUserResult.Success).user
+            }
+            is FetchUserResult.Error -> {
+                snackbarHostState.showSnackbar((fetchUserResult as FetchUserResult.Error).message)
+            }
+            is FetchUserResult.Idle -> {
+                if (viewModel.isFirstLoad) {
+                    viewModel.fetchUser()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(logoutResult) {
+        when (logoutResult) {
+            is LogoutResult.Success -> {
+                snackbarHostState.showSnackbar("Logout successful!")
+                kotlinx.coroutines.delay(1500)
+                onLoggedOut()
+            }
+            is LogoutResult.Error -> {
+                snackbarHostState.showSnackbar((logoutResult as LogoutResult.Error).message)
+            }
+            else -> {
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+            .verticalScroll(scrollState),
+    ) {
+
+        if (user != null) {
+            ProfileHeader(user = user!!)
+            Spacer(Modifier.height(24.dp))
+            InviteCard(user!!)
+            Spacer(Modifier.height(24.dp))
+            GeneralSection()
+            Spacer(Modifier.height(24.dp))
+            PrivacyNSecuritySection()
+            Spacer(Modifier.height(24.dp))
+        }
+
+        AboutSection()
+
+        Spacer(Modifier.height(36.dp))
+
+        LogoutButton {
+            viewModel.logout()
+        }
+    }
+
+    if (isLoading) {
+        LoadingOverlay()
+    }
+}
+
+@Composable
+fun ProfileHeader(user: User) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Box(
+                modifier = Modifier
+                    .size(108.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(104.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.background,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (user.avatar != null) {
+                        CircleAvatar(imageUrl = user.avatar)
+                    } else {
+                        DefaultCircleAvatar(
+                            initials = "${user.lastName[0]}${user.firstName[0]}"
+                        )
+                    }
+                }
+            }
+
+            AddButton()
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "${user.lastName} ${user.firstName}".trim(),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Row {
+            Tag(user.username)
+            Spacer(Modifier.width(8.dp))
+            Tag("Edit profile", bold = true)
+        }
+    }
+}
+
+@Composable
+fun CircleAvatar(
+    imageUrl: String,
+    size: Int = 100
+) {
+    Box(
+        modifier = Modifier
+            .size(size.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context = LocalContext.current)
+                .crossfade(false)
+                .data(imageUrl)
+                .build(),
+            contentDescription = "Your avatar",
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
+fun DefaultCircleAvatar(
+    initials: String,
+    size: Int = 100,
+    fontSize: Int = 32,
+) {
+    Box(
+        modifier = Modifier
+            .size(size.dp)
+            .background(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = initials,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            fontSize = fontSize.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun AddButton() {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .offset(x = (-4).dp, y = (-4).dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "+",
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun Tag(text: String, bold: Boolean = false) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            fontWeight = if (bold) FontWeight.Bold else null,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+fun InviteCard(user: User) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (user.avatar != null) {
+                    CircleAvatar(imageUrl = user.avatar)
+                } else {
+                    DefaultCircleAvatar(
+                        initials = "${user.lastName[0]}${user.firstName[0]}",
+                        size = 50,
+                        fontSize = 16
+                    )
+                }
+            }
+        }
+        
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Mời bạn bè tham gia LiveSnap",
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.W500
+            )
+            Text(
+                text = "livesnap.app/${user.username}",
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontSize = 13.sp)
+        }
+        Icon(
+            imageVector = Icons.Default.Share,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
+@Composable
+fun GeneralSection() {
+    SectionTitle(
+        icon = Icons.Default.Person,
+        text = "General"
+    )
+
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp),
+        ) {
+            SectionRow(
+                icon = Icons.Default.Phone,
+                text = "Change phone number",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.Default.Mail,
+                text = "Change email address",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.AutoMirrored.Filled.Send,
+                text = "Send feedback",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.Default.ReportProblem,
+                text = "Report Issue",
+                onClick = { TODO() }
+            )
+        }
+    }
+}
+
+@Composable
+fun PrivacyNSecuritySection() {
+    SectionTitle(
+        icon = Icons.Default.Lock,
+        text = "Privacy & Security"
+    )
+
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .fillMaxWidth()
+    ) {
+        SectionRow(
+            icon = Icons.Default.Visibility,
+            text = "Account Visibility",
+            onClick = { TODO() },
+            modifier = Modifier
+                .padding(8.dp)
+        )
+    }
+}
+
+@Composable
+fun AboutSection() {
+    SectionTitle(
+        icon = Icons.Default.Favorite,
+        text = "About"
+    )
+
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp),
+        ) {
+            SectionRow(
+                icon = Icons.Default.Share,
+                text = "Share LiveSnap",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.Default.Star,
+                text = "Rate LiveSnap",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.Default.Description,
+                text = "Terms and Services",
+                onClick = { TODO() }
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+            )
+
+            SectionRow(
+                icon = Icons.Default.Lock,
+                text = "Privacy Policy",
+                onClick = { TODO() }
+            )
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground,
+        )
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .padding(
+                    vertical = 8.dp,
+                    horizontal = 8.dp
+                )
+        )
+    }
+}
+
+@Composable
+fun SectionRow(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .padding(vertical = 8.dp)
+            .clickable(
+                onClick = onClick
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(24.dp)
+        )
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.W500,
+            modifier = Modifier
+                .padding(start = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+fun LogoutButton(
+    onLogoutClick: () -> Unit
+) {
+    Button(
+        onClick = onLogoutClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer
+        ),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(56.dp)
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Logout,
+            contentDescription = "Logout",
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Log Out", style = MaterialTheme.typography.labelLarge)
+    }
+}

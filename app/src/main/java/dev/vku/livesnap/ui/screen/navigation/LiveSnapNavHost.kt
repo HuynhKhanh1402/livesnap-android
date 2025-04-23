@@ -49,6 +49,9 @@ import dev.vku.livesnap.ui.screen.home.HomeScreen
 import dev.vku.livesnap.ui.screen.home.UploadSnapDestination
 import dev.vku.livesnap.ui.screen.home.UploadSnapScreen
 import dev.vku.livesnap.ui.screen.home.UploadSnapViewModel
+import dev.vku.livesnap.ui.screen.profile.UserProfileDestination
+import dev.vku.livesnap.ui.screen.profile.UserProfileScreen
+import dev.vku.livesnap.ui.screen.profile.UserProfileViewModel
 
 @Composable
 fun LiveSnapNavHost(
@@ -63,6 +66,8 @@ fun LiveSnapNavHost(
 
     val captureViewModel: CaptureViewModel = hiltViewModel()
     val feedViewModel: FeedViewModel = hiltViewModel()
+
+    val userProfileViewModel: UserProfileViewModel = hiltViewModel()
 
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
@@ -170,6 +175,9 @@ fun LiveSnapNavHost(
                     captureViewModel = captureViewModel,
                     feedViewModel = feedViewModel,
                     snackbarHostState = snackbarHostState,
+                    onProfileBtnClicked = {
+                        navController.navigate(UserProfileDestination.route)
+                    },
                     onImageCaptured = { uri ->
                         navController.navigate("upload?uri=${uri}")
                     }
@@ -198,6 +206,18 @@ fun LiveSnapNavHost(
                         }
                     )
                 }
+            }
+
+            composable(route = UserProfileDestination.route) {
+                UserProfileScreen(
+                    viewModel = userProfileViewModel,
+                    snackbarHostState = snackbarHostState,
+                    onLoggedOut = {
+                        navController.navigate(AuthSelectDestination.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     }

@@ -53,6 +53,7 @@ import com.google.common.util.concurrent.ListenableFuture
 @Composable
 fun CaptureScreen(
     viewModel: CaptureViewModel,
+    onProfileBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -95,7 +96,9 @@ fun CaptureScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CaptureTopBar()
+            CaptureTopBar(
+                onProfileBtnClicked = onProfileBtnClicked
+            )
 
             Spacer(Modifier.height(64.dp))
 
@@ -131,7 +134,9 @@ fun CaptureScreen(
 }
 
 @Composable
-fun CaptureTopBar() {
+fun CaptureTopBar(
+    onProfileBtnClicked: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -153,7 +158,7 @@ fun CaptureTopBar() {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = {}) {
+            IconButton(onClick = onProfileBtnClicked) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",

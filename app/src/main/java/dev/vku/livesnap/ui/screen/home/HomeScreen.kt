@@ -18,7 +18,8 @@ fun HomeScreen(
     captureViewModel: CaptureViewModel,
     feedViewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
-    onImageCaptured: (Uri) -> Unit
+    onProfileBtnClicked: () -> Unit,
+    onImageCaptured: (Uri) -> Unit,
 ) {
     val pagerState = rememberPagerState(
         pageCount = { 2 }
@@ -31,6 +32,7 @@ fun HomeScreen(
         when (page) {
             0 -> CaptureScreen(
                 viewModel = captureViewModel,
+                onProfileBtnClicked = onProfileBtnClicked,
                 onImageCaptured = onImageCaptured
             )
             1 -> FeedScreen(
