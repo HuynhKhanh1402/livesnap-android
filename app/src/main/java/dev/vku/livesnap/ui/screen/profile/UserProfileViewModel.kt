@@ -65,6 +65,11 @@ class UserProfileViewModel @Inject constructor(
         }
     }
 
+    fun resetFetchUserResult() {
+        _fetchUserResult.value = FetchUserResult.Idle
+        isFirstLoad = true
+    }
+
     fun logout() {
         viewModelScope.launch {
             _loadingState.value = true

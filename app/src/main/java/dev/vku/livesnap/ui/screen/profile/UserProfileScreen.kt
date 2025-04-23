@@ -33,9 +33,11 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -63,6 +66,7 @@ object UserProfileDestination: NavigationDestination {
     override val route: String = "profile"
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     viewModel: UserProfileViewModel,
@@ -76,6 +80,8 @@ fun UserProfileScreen(
     val isLoading by viewModel.loadingState.collectAsState()
 
     var user by remember { mutableStateOf<User?>(null) }
+
+    var showAvatarDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(fetchUserResult) {
         when (fetchUserResult) {
@@ -117,7 +123,12 @@ fun UserProfileScreen(
     ) {
 
         if (user != null) {
-            ProfileHeader(user = user!!)
+            ProfileHeader(
+                user = user!!,
+                onUploadAvatarBtnClicked = {
+                    showAvatarDialog = true
+                }
+            )
             Spacer(Modifier.height(24.dp))
             InviteCard(user!!)
             Spacer(Modifier.height(24.dp))
@@ -139,10 +150,63 @@ fun UserProfileScreen(
     if (isLoading) {
         LoadingOverlay()
     }
+
+    if (showAvatarDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { showAvatarDialog = false },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Change your avatar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Text(
+                    text = "Chose image from gallery",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showAvatarDialog = false
+//                        viewModel.pickImageFromGallery()
+                        }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
+
+                Text("Capture image from camera", modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showAvatarDialog = false
+//                        viewModel.captureImageFromCamera()
+                    }
+                    .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
+
+                Text("Cancel", modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showAvatarDialog = false }
+                    .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
 }
 
 @Composable
-fun ProfileHeader(user: User) {
+fun ProfileHeader(
+    user: User,
+    onUploadAvatarBtnClicked: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -176,7 +240,9 @@ fun ProfileHeader(user: User) {
                 }
             }
 
-            AddButton()
+            AddButton(
+                onClick = onUploadAvatarBtnClicked
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -245,7 +311,9 @@ fun DefaultCircleAvatar(
 }
 
 @Composable
-fun AddButton() {
+fun AddButton(
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .size(24.dp)
@@ -253,6 +321,9 @@ fun AddButton() {
             .background(
                 color = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
+            )
+            .clickable(
+                onClick = onClick
             ),
         contentAlignment = Alignment.Center
     ) {

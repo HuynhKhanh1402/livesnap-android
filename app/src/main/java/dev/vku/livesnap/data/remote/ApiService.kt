@@ -34,6 +34,15 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
+    @GET("users/detail")
+    suspend fun fetchUserDetail(): Response<UserDetailResponse>
+
+    @Multipart
+    @POST("users/set-avatar")
+    suspend fun setAvatar(
+        @Part avatar: MultipartBody.Part
+    ): Response<Unit>
+
     @GET("snaps/load")
     suspend fun getSnaps(
         @Query("page") page: Int,
@@ -46,7 +55,4 @@ interface ApiService {
         @Part image: MultipartBody.Part,
         @Part("caption") caption: RequestBody
     ): Response<UploadSnapResponse>
-
-    @GET("users/detail")
-    suspend fun fetchUserDetail(): Response<UserDetailResponse>
 }
