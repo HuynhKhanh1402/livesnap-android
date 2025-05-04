@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material.icons.filled.ChatBubble
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -73,6 +71,7 @@ import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -80,6 +79,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+
 
 @OptIn(ExperimentalSnapperApi::class)
 @Composable
@@ -89,6 +89,7 @@ fun FeedScreen(
     onProfileBtnClicked: () -> Unit
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
+    val reactSnapResult by viewModel.reactSnapResult.collectAsState()
 
     val snaps = viewModel.snaps
     val isLoading = viewModel.isLoading
@@ -118,6 +119,24 @@ fun FeedScreen(
             else -> {}
         }
     }
+
+    LaunchedEffect(reactSnapResult) {
+        when (reactSnapResult) {
+            is LoadingResult.Success -> {
+                val emoji = (reactSnapResult as LoadingResult.Success).data
+                snackbarHostState.showSnackbar(emoji)
+                viewModel.resetReactSnapResult()
+            }
+            is LoadingResult.Error -> {
+                snackbarHostState.showSnackbar((reactSnapResult as LoadingResult.Error).message)
+                viewModel.resetLoadSnapResult()
+            }
+            else -> {
+            }
+        }
+    }
+
+
 
     if (!viewModel.isFirstLoad && snaps.isEmpty()) {
         EmptyFeed(
@@ -149,6 +168,9 @@ fun FeedScreen(
                             snackbarHostState.showSnackbar("Error: $error")
                         }
                     })
+                },
+                onReact = { emoji ->
+                    viewModel.reactSnap(snap, emoji)
                 }
             )
         }
@@ -185,10 +207,10 @@ fun Feed(
     modifier: Modifier = Modifier,
     snap: Snap,
     onProfileBtnClicked: () -> Unit,
-    onDeleteBtnClicked: () -> Unit
+    onDeleteBtnClicked: () -> Unit,
+    onReact: (String) -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
 
     Column(
         modifier = modifier
@@ -232,7 +254,9 @@ fun Feed(
             if (snap.isOwner) {
                 ActivityBar()
             } else {
-                ReactionBar()
+                ReactionBar(
+                    onReact = onReact
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -508,7 +532,9 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: 
 }
 
 @Composable
-fun ReactionBar() {
+fun ReactionBar(
+    onReact: (String) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -543,21 +569,27 @@ fun ReactionBar() {
                     text = "❤️",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
-                        .clickable(onClick = {})
+                        .clickable(onClick = {
+                            onReact("❤️")
+                        })
                 )
 
                 Text(
                     text = "🔥",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
-                        .clickable(onClick = {})
+                        .clickable(onClick = {
+                            onReact("🔥")
+                        })
                 )
 
                 Text(
                     text = "😂",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
-                        .clickable(onClick = {})
+                        .clickable(onClick = {
+                            onReact("😂")
+                        })
                 )
 
                 Icon(

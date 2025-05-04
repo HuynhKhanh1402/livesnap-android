@@ -2,7 +2,9 @@ package dev.vku.livesnap.data.repository
 
 import android.content.Context
 import dev.vku.livesnap.data.remote.ApiService
+import dev.vku.livesnap.data.remote.dto.request.ReactSnapRequest
 import dev.vku.livesnap.data.remote.dto.request.UploadSnapRequest
+import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
 import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
 import retrofit2.Response
@@ -11,6 +13,7 @@ interface SnapRepository {
     suspend fun getSnaps(currentPage: Int, pageSize: Int): Response<SnapsResponse>
     suspend fun uploadSnap(context: Context, request: UploadSnapRequest): Response<UploadSnapResponse>
     suspend fun deleteSnap(snapId: String): Response<Unit>
+    suspend fun reactSnap(snapId: String, emoji: String): Response<DefaultResponse>
 }
 
 class DefaultSnapRepository(
@@ -30,5 +33,12 @@ class DefaultSnapRepository(
 
     override suspend fun deleteSnap(snapId: String): Response<Unit> {
         return apiService.deleteSnap(snapId)
+    }
+
+    override suspend fun reactSnap(
+        snapId: String,
+        emoji: String
+    ): Response<DefaultResponse> {
+        return apiService.reactSnap(ReactSnapRequest(snapId, emoji))
     }
 }

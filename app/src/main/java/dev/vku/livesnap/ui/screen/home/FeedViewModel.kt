@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.icu.text.BreakIterator
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -27,6 +29,9 @@ class FeedViewModel @Inject constructor(
 ) : ViewModel() {
     private var _loadSnapResult = MutableStateFlow<LoadSnapResult>(LoadSnapResult.Idle)
     var loadSnapResult: StateFlow<LoadSnapResult> = _loadSnapResult
+
+    private var _reactSnapResult = MutableStateFlow<LoadingResult<String>>(LoadingResult.Idle)
+    var reactSnapResult: StateFlow<LoadingResult<String>> = _reactSnapResult
 
     var isFirstLoad = true
 
@@ -91,5 +96,52 @@ class FeedViewModel @Inject constructor(
                 isLoading = false
             }
         }
+    }
+
+    fun reactSnap(snap: Snap, emoji: String) {
+        viewModelScope.launch {
+            isLoading = true
+
+            try {
+                require(isSingleEmojiICU(emoji)) {
+                    "Invalid emoji: $emoji"
+                }
+
+                val response = snapRepository.reactSnap(snap.id, emoji)
+
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    _reactSnapResult.value = LoadingResult.Success(emoji)
+                } else {
+                    _reactSnapResult.value = LoadingResult.Error(response.message() ?: "Unknown error")
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Exception occurred: ${e.message}", e)
+                _reactSnapResult.value = LoadingResult.Error("An error occurred: ${e.message}")
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun resetReactSnapResult() {
+        _reactSnapResult.value = LoadingResult.Idle
+    }
+
+    private fun isSingleEmojiICU(text: String): Boolean {
+        val iterator = BreakIterator.getCharacterInstance()
+        iterator.setText(text)
+
+        var count = 0
+        var start = iterator.first()
+        var end = iterator.next()
+
+        while (end != BreakIterator.DONE) {
+            count++
+            if (count > 1) return false
+            start = end
+            end = iterator.next()
+        }
+
+        return count == 1
     }
 }
