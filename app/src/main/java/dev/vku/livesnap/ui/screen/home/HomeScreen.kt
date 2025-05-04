@@ -37,7 +37,8 @@ fun HomeScreen(
             )
             1 -> FeedScreen(
                 viewModel = feedViewModel,
-                snackbarHostState = snackbarHostState
+                snackbarHostState = snackbarHostState,
+                onProfileBtnClicked = onProfileBtnClicked
             )
         }
     }

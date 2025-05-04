@@ -18,6 +18,7 @@ interface UsersRepository {
     suspend fun checkUsernameExist(username: String): CheckUsernameExistResponse
     suspend fun login(email: String, password: String): LoginResponse
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
+    suspend fun updateName(firstName: String, lastName: String): Response<Unit>
 }
 
 class DefaultUsersRepository(
@@ -41,6 +42,13 @@ class DefaultUsersRepository(
 
     override suspend fun fetchUserDetail(): Response<UserDetailResponse> {
         return apiService.fetchUserDetail()
+    }
+
+    override suspend fun updateName(
+        firstName: String,
+        lastName: String
+    ): Response<Unit> {
+        return apiService.updateName(firstName, lastName)
     }
 
 }

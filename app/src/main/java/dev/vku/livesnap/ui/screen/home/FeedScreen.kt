@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material.icons.filled.ChatBubble
@@ -26,10 +27,13 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +41,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +75,7 @@ import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Snap
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,6 +86,7 @@ import java.util.concurrent.TimeUnit
 fun FeedScreen(
     viewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
+    onProfileBtnClicked: () -> Unit
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
 
@@ -97,6 +106,8 @@ fun FeedScreen(
             }
         },
     )
+
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(loadSnapResult) {
         when(loadSnapResult) {
@@ -126,7 +137,19 @@ fun FeedScreen(
                 snap = snap,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(screenHeight)
+                    .height(screenHeight),
+                onProfileBtnClicked = onProfileBtnClicked,
+                onDeleteBtnClicked = {
+                    viewModel.deleteSnap(snap.id, {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Delete snap successful!"   )
+                        }
+                    }, { error ->
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Error: $error")
+                        }
+                    })
+                }
             )
         }
 
@@ -156,18 +179,26 @@ fun FeedScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Feed(
     modifier: Modifier = Modifier,
-    snap: Snap
+    snap: Snap,
+    onProfileBtnClicked: () -> Unit,
+    onDeleteBtnClicked: () -> Unit
 ) {
+    val showDialog = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        FeedTopBar()
+        FeedTopBar(
+            onProfileBtnClicked = onProfileBtnClicked
+        )
 
         Spacer(Modifier.height(64.dp))
 
@@ -206,13 +237,60 @@ fun Feed(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ActionBar()
+            ActionBar(
+                onMoreOptionsBtnClicked = { showDialog.value = true }
+            )
+        }
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Save",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showDialog.value = false
+                        }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
+
+                Text("Delete", modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showDialog.value = false
+                        onDeleteBtnClicked()
+                    }
+                    .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.error
+                )
+
+                Text("Cancel", modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDialog.value = false }
+                    .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
 
 @Composable
-fun FeedTopBar() {
+fun FeedTopBar(
+    onProfileBtnClicked: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,7 +312,7 @@ fun FeedTopBar() {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = {}) {
+            IconButton(onClick = onProfileBtnClicked) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
@@ -548,7 +626,9 @@ fun ActivityBar(
 }
 
 @Composable
-fun ActionBar() {
+fun ActionBar(
+    onMoreOptionsBtnClicked: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -598,11 +678,11 @@ fun ActionBar() {
         }
 
         IconButton(
-            onClick = {}
+            onClick = onMoreOptionsBtnClicked
         ) {
             Icon(
                 imageVector = Icons.Filled.Menu,
-                contentDescription = "Gallery",
+                contentDescription = "More option",
                 modifier = Modifier
                     .size(32.dp),
                 tint = MaterialTheme.colorScheme.onBackground,

@@ -10,6 +10,7 @@ import retrofit2.Response
 interface SnapRepository {
     suspend fun getSnaps(currentPage: Int, pageSize: Int): Response<SnapsResponse>
     suspend fun uploadSnap(context: Context, request: UploadSnapRequest): Response<UploadSnapResponse>
+    suspend fun deleteSnap(snapId: String): Response<Unit>
 }
 
 class DefaultSnapRepository(
@@ -25,5 +26,9 @@ class DefaultSnapRepository(
     override suspend fun uploadSnap(context: Context, request: UploadSnapRequest): Response<UploadSnapResponse> {
         val (imagePart, captionPart) = request.toMultipartParts(context)
         return apiService.uploadSnap(imagePart, captionPart)
+    }
+
+    override suspend fun deleteSnap(snapId: String): Response<Unit> {
+        return apiService.deleteSnap(snapId)
     }
 }

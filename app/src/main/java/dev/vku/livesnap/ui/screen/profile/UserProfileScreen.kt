@@ -1,5 +1,7 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -73,6 +75,7 @@ fun UserProfileScreen(
     snackbarHostState: SnackbarHostState,
     onLoggedOut: () -> Unit
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
     val fetchUserResult by viewModel.fetchUserResult.collectAsState()
@@ -82,6 +85,14 @@ fun UserProfileScreen(
     var user by remember { mutableStateOf<User?>(null) }
 
     var showAvatarDialog by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.updateAvatar(uri)
+        }
+    }
 
     LaunchedEffect(fetchUserResult) {
         when (fetchUserResult) {
@@ -103,13 +114,31 @@ fun UserProfileScreen(
         when (logoutResult) {
             is LogoutResult.Success -> {
                 snackbarHostState.showSnackbar("Logout successful!")
-                kotlinx.coroutines.delay(1500)
+                kotlinx.coroutines.delay(1000)
                 onLoggedOut()
             }
             is LogoutResult.Error -> {
                 snackbarHostState.showSnackbar((logoutResult as LogoutResult.Error).message)
             }
             else -> {
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is ProfileUiEvent.PickImageFromGallery -> {
+                    galleryLauncher.launch("image/*")
+                }
+
+                is ProfileUiEvent.CaptureImageFromCamera -> {
+                    // Sẽ triển khai sau
+                }
+
+                is ProfileUiEvent.ShowSnackbar -> {
+                    // Hiện Snackbar
+                }
             }
         }
     }
@@ -175,7 +204,7 @@ fun UserProfileScreen(
                         .fillMaxWidth()
                         .clickable {
                             showAvatarDialog = false
-//                        viewModel.pickImageFromGallery()
+                            viewModel.pickImageFromGallery()
                         }
                         .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
@@ -438,7 +467,9 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.Default.Phone,
                 text = "Change phone number",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -448,7 +479,9 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.Default.Mail,
                 text = "Change email address",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -458,7 +491,9 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.AutoMirrored.Filled.Send,
                 text = "Send feedback",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -468,7 +503,9 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.Default.ReportProblem,
                 text = "Report Issue",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:
+                }
             )
         }
     }
@@ -521,7 +558,9 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Share,
                 text = "Share LiveSnap",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -531,7 +570,9 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Star,
                 text = "Rate LiveSnap",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -541,7 +582,9 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Description,
                 text = "Terms and Services",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -551,7 +594,9 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Lock,
                 text = "Privacy Policy",
-                onClick = { TODO() }
+                onClick = {
+                    // TODO:  
+                }
             )
         }
     }

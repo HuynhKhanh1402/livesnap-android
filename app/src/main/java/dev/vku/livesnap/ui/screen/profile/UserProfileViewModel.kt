@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -7,8 +8,10 @@ import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.model.User
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +27,18 @@ sealed class LogoutResult {
     data object Idle : LogoutResult()
 }
 
+sealed class UploadAvatarResult {
+    data object Success : UploadAvatarResult()
+    data class Error(val message: String) : UploadAvatarResult()
+    data object Idle : UploadAvatarResult()
+}
+
+sealed class ProfileUiEvent {
+    object PickImageFromGallery : ProfileUiEvent()
+    object CaptureImageFromCamera : ProfileUiEvent()
+    data class ShowSnackbar(val message: String) : ProfileUiEvent()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -37,8 +52,14 @@ class UserProfileViewModel @Inject constructor(
     private val _logoutResult = MutableStateFlow<LogoutResult>(LogoutResult.Idle)
     val logoutResult: StateFlow<LogoutResult> = _logoutResult
 
+    private val _uploadAvatarResult = MutableStateFlow<UploadAvatarResult>(UploadAvatarResult.Idle)
+    val uploadAvatarResult: StateFlow<UploadAvatarResult> = _uploadAvatarResult
+
     private val _loadingState = MutableStateFlow(false)
     val loadingState: StateFlow<Boolean> = _loadingState
+
+    private val _uiEvent = MutableSharedFlow<ProfileUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     fun fetchUser() {
         viewModelScope.launch {
@@ -82,5 +103,20 @@ class UserProfileViewModel @Inject constructor(
                 _loadingState.value = false
             }
         }
+    }
+
+    fun pickImageFromGallery() {
+        viewModelScope.launch {
+            _uiEvent.emit(ProfileUiEvent.PickImageFromGallery)
+        }
+    }
+
+    fun updateAvatar(uri: Uri) {
+//        viewModelScope.launch {
+//            _loadingState.value = true
+//            try {
+//                userRepository.se
+//            }
+//        }
     }
 }

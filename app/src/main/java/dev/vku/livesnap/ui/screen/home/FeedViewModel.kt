@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
@@ -73,5 +72,24 @@ class FeedViewModel @Inject constructor(
 
     fun resetLoadSnapResult() {
         _loadSnapResult.value = LoadSnapResult.Idle
+    }
+
+    fun deleteSnap(snapId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            isLoading = true
+
+            try {
+                val response = snapRepository.deleteSnap(snapId)
+                if (response.isSuccessful) {
+                    snaps = snaps.filter { it.id != snapId }
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Exception occurred: ${e.message}", e)
+                onError("An error occurred: ${e.message}")
+            } finally {
+                isLoading = false
+            }
+        }
     }
 }
