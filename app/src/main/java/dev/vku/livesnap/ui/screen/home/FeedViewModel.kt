@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.repository.SnapRepository
+import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
 import dev.vku.livesnap.ui.util.LoadingResult
@@ -42,6 +43,12 @@ class FeedViewModel @Inject constructor(
     var currentPage = 1
     private val pageSize = 2
     var hasNextPage = true
+
+    var currentSnap by mutableStateOf<Snap?>(null)
+        private set
+
+    private var _isFetchingCurrentSnap = MutableStateFlow<Boolean>(false)
+    var isFetchingCurrentSnap: StateFlow<Boolean> = _isFetchingCurrentSnap
 
     fun loadSnaps() {
         if (isLoading || !hasNextPage) return
@@ -125,6 +132,41 @@ class FeedViewModel @Inject constructor(
 
     fun resetReactSnapResult() {
         _reactSnapResult.value = LoadingResult.Idle
+    }
+
+    fun updateCurrentSnap(newSnap: Snap) {
+        if (newSnap == currentSnap) {
+            return
+        }
+
+        currentSnap = newSnap
+        fetchingCurrentSnap(newSnap.id)
+    }
+
+    fun fetchingCurrentSnap(snapId: String) {
+        viewModelScope.launch {
+            _isFetchingCurrentSnap.value = true
+
+            try {
+                val response = snapRepository.fetchSnap(snapId)
+                if (response.isSuccessful && response.body()?.data != null) {
+                    val snap = response.body()!!.data.toDomain()
+                    if (snap.id == currentSnap?.id) {
+                        currentSnap = snap
+                    }
+
+                    snaps = snaps.map { if (it.id == snap.id) snap else it }
+
+                    Log.d("FeedViewModel", "Updated snap: $snap")
+                } else {
+                    Log.e("FeedViewModel", "Failed to fetch snap detail: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Exception occurred while fetching snap detail: ${e.message}", e)
+            } finally {
+                _isFetchingCurrentSnap.value = false
+            }
+        }
     }
 
     private fun isSingleEmojiICU(text: String): Boolean {

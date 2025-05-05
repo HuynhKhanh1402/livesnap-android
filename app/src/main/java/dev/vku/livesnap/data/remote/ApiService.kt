@@ -9,6 +9,7 @@ import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
+import dev.vku.livesnap.data.remote.dto.response.SnapResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
 import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
@@ -52,7 +53,7 @@ interface ApiService {
     suspend fun updateName(firstName: String, lastName: String): Response<Unit>
 
     @GET("snaps/test")
-    suspend fun getSnaps(
+    suspend fun fetchSnaps(
         @Query("page") page: Int,
         @Query("limit") limit: Int
     ): Response<SnapsResponse>
@@ -69,4 +70,7 @@ interface ApiService {
 
     @POST("snaps/react")
     suspend fun reactSnap(@Body request: ReactSnapRequest) : Response<DefaultResponse>
+
+    @GET("snaps/{snapId}")
+    suspend fun fetchSnap(@Path("snapId") snapId: String): Response<SnapResponse>
 }

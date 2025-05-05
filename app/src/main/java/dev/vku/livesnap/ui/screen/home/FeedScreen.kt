@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +38,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +60,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
@@ -70,10 +76,13 @@ import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
+import dev.vku.livesnap.domain.model.Reaction
 import dev.vku.livesnap.domain.model.Snap
 import dev.vku.livesnap.ui.util.LoadingResult
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -81,7 +90,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
-@OptIn(ExperimentalSnapperApi::class)
+@OptIn(ExperimentalSnapperApi::class, FlowPreview::class)
 @Composable
 fun FeedScreen(
     viewModel: FeedViewModel,
@@ -110,6 +119,8 @@ fun FeedScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
+    val isFetchingCurrentSnap by viewModel.isFetchingCurrentSnap.collectAsState()
+
     LaunchedEffect(loadSnapResult) {
         when(loadSnapResult) {
             is LoadSnapResult.Error -> {
@@ -136,8 +147,6 @@ fun FeedScreen(
         }
     }
 
-
-
     if (!viewModel.isFirstLoad && snaps.isEmpty()) {
         EmptyFeed(
             onInviteClick = {
@@ -157,6 +166,7 @@ fun FeedScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(screenHeight),
+                isFetchingDetail = isFetchingCurrentSnap,
                 onProfileBtnClicked = onProfileBtnClicked,
                 onDeleteBtnClicked = {
                     viewModel.deleteSnap(snap.id, {
@@ -190,6 +200,20 @@ fun FeedScreen(
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            .onEach { visibleItems ->
+                val indices = visibleItems.map { it.index }
+                val activeIndex = when {
+                    indices.size >= 3 -> indices[1]
+                    indices.size == 2 && indices[0] == 0 -> 0
+                    indices.size == 2 && indices[1] == viewModel.snaps.lastIndex -> indices[1]
+                    indices.size == 1 -> indices[0]
+                    else -> null
+                }
+                val activeSnap = activeIndex?.let { viewModel.snaps.getOrNull(it) }
+                if (activeSnap != null) {
+                    viewModel.updateCurrentSnap(activeSnap)
+                }
+            }
             .map { visibleItems -> visibleItems.lastOrNull()?.index ?: 0 }
             .distinctUntilChanged()
             .collect { lastVisibleItemIndex ->
@@ -206,11 +230,18 @@ fun FeedScreen(
 fun Feed(
     modifier: Modifier = Modifier,
     snap: Snap,
+    isFetchingDetail: Boolean,
     onProfileBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
     onReact: (String) -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
+
+    val sheetState = rememberModalBottomSheetState()
+    var showSheet by remember { mutableStateOf(false) }
+
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val minHeightDp = (screenHeightDp * 0.5).dp
 
     Column(
         modifier = modifier
@@ -252,7 +283,13 @@ fun Feed(
         ) {
 
             if (snap.isOwner) {
-                ActivityBar()
+                ActivityBar(
+                    isFetchingDetail = isFetchingDetail,
+                    reactions = snap.reactions,
+                    onClick = {
+                        showSheet = true
+                    }
+                )
             } else {
                 ReactionBar(
                     onReact = onReact
@@ -306,6 +343,73 @@ fun Feed(
                     .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
                 )
+            }
+        }
+    }
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            sheetState = sheetState,
+            modifier = Modifier
+
+        ) {
+            Text(
+                text = "Activities",
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = minHeightDp)
+                    .padding(horizontal = 16.dp)
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(snap.reactions) { reaction ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val user = reaction.user
+                            if (user.avatar != null) {
+                                UserAvatar(
+                                    imageUrl = user.avatar,
+                                    size = 40
+                                )
+                            } else {
+                                DefaultUserAvatar(
+                                    initials = "${user.lastName[0]}${user.firstName[0]}",
+                                    size = 40,
+                                    fontSize = 24
+                                )
+                            }
+
+                            Text(
+                                text = "${user.lastName} ${user.firstName}".trim(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                            )
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            Text(
+                                text = reaction.emoji,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                }
             }
         }
     }
@@ -527,7 +631,9 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: 
             fontWeight = FontWeight.W500,
             modifier = Modifier
                 .padding(start = 8.dp)
-        )
+        ).also {
+            Log.d("FeedScreen", "FeedPhotoFooter: ${formatTimeAgo(createdAt)}")
+        }
     }
 }
 
@@ -609,14 +715,17 @@ fun ReactionBar(
 
 @Composable
 fun ActivityBar(
-    hasActivity: Boolean = false
+    isFetchingDetail: Boolean,
+    reactions: List<Reaction>,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .background(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 shape = RoundedCornerShape(percent = 50)
-            ),
+            )
+            .clickable { onClick() },
     ) {
         Row(
             modifier = Modifier
@@ -638,20 +747,64 @@ fun ActivityBar(
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSecondaryContainer),
             )
 
-            if (hasActivity) {
+            if (isFetchingDetail) {
                 Text(
                     text = "Hoạt động",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.W600
                 )
-            } else {
-                Text(
-                    text = "Chưa có hoạt động nào!",
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.W600
+
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
+            } else {
+                if (reactions.isEmpty()) {
+                    Text(
+                        text = "Chưa có hoạt động nào!",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.W600
+                    )
+
+                } else {
+                    Text(
+                        text = "Hoạt động",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.W600
+                    )
+
+                    val firstReaction = reactions.firstOrNull()!!
+                    val user = firstReaction.user
+
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.background,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        user.avatar.let {
+                            if (it != null) {
+                                UserAvatar(
+                                    imageUrl = it,
+                                    size = 24
+                                )
+                            } else {
+                                DefaultUserAvatar(
+                                    initials = "${user.lastName[0]}${user.firstName[0]}",
+                                    size = 24,
+                                    fontSize = 11
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -770,6 +923,41 @@ fun EmptyFeed(
         TextButton(onClick = onInviteClick) {
             Text("Invite friends")
         }
+    }
+}
+
+@Composable
+fun UserAvatar(imageUrl: String, size: Int, modifier: Modifier = Modifier) {
+    AsyncImage(
+        model = ImageRequest.Builder(context = LocalContext.current)
+            .crossfade(false)
+            .data(imageUrl)
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .size(size.dp)
+            .clip(CircleShape)
+    )
+}
+
+@Composable
+fun DefaultUserAvatar(initials: String, size: Int, fontSize: Int, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(size.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = initials,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            fontSize = fontSize.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

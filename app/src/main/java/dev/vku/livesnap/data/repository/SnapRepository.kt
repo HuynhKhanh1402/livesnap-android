@@ -5,6 +5,7 @@ import dev.vku.livesnap.data.remote.ApiService
 import dev.vku.livesnap.data.remote.dto.request.ReactSnapRequest
 import dev.vku.livesnap.data.remote.dto.request.UploadSnapRequest
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
+import dev.vku.livesnap.data.remote.dto.response.SnapResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
 import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
 import retrofit2.Response
@@ -14,6 +15,7 @@ interface SnapRepository {
     suspend fun uploadSnap(context: Context, request: UploadSnapRequest): Response<UploadSnapResponse>
     suspend fun deleteSnap(snapId: String): Response<Unit>
     suspend fun reactSnap(snapId: String, emoji: String): Response<DefaultResponse>
+    suspend fun fetchSnap(snapId: String): Response<SnapResponse>
 }
 
 class DefaultSnapRepository(
@@ -23,7 +25,7 @@ class DefaultSnapRepository(
         currentPage: Int,
         pageSize: Int
     ): Response<SnapsResponse> {
-        return apiService.getSnaps(currentPage, pageSize)
+        return apiService.fetchSnaps(currentPage, pageSize)
     }
 
     override suspend fun uploadSnap(context: Context, request: UploadSnapRequest): Response<UploadSnapResponse> {
@@ -40,5 +42,9 @@ class DefaultSnapRepository(
         emoji: String
     ): Response<DefaultResponse> {
         return apiService.reactSnap(ReactSnapRequest(snapId, emoji))
+    }
+
+    override suspend fun fetchSnap(snapId: String): Response<SnapResponse> {
+        return apiService.fetchSnap(snapId)
     }
 }

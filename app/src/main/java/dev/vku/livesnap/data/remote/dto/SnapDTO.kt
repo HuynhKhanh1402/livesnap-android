@@ -9,5 +9,6 @@ data class SnapDTO(
     val image: String,
     val user: UserDTO,
     val isOwner: Boolean,
+    val reactions: List<ReactionDTO>,
     val createdAt: String
 )

@@ -8,5 +8,6 @@ data class Snap(
     val image: String,
     val user: User,
     val isOwner: Boolean,
-    val createdAt: Date
+    val reactions: List<Reaction>,
+    val createdAt: Date,
 )

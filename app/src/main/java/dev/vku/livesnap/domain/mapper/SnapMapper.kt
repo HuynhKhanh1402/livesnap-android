@@ -14,6 +14,7 @@ fun SnapDTO.toDomain(): Snap {
         image = this.image,
         user = this.user.toDomain(),
         isOwner = this.isOwner,
+        reactions = this.reactions.toDomain(),
         createdAt = convertStringToDate(this.createdAt)
     )
 }
@@ -25,6 +26,7 @@ fun Snap.toSnapDTO(): SnapDTO {
         image = this.image,
         user = this.user.toDTO(),
         isOwner = this.isOwner,
+        reactions = this.reactions.toDTO(),
         createdAt = convertDateToString(this.createdAt)
     )
 }
