@@ -33,6 +33,7 @@ fun HomeScreen(
             0 -> CaptureScreen(
                 viewModel = captureViewModel,
                 onProfileBtnClicked = onProfileBtnClicked,
+                snackbarHostState = snackbarHostState,
                 onImageCaptured = onImageCaptured
             )
             1 -> FeedScreen(

@@ -8,6 +8,7 @@ import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
+import dev.vku.livesnap.data.remote.dto.response.FriendListResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
@@ -73,4 +74,10 @@ interface ApiService {
 
     @GET("snaps/{snapId}")
     suspend fun fetchSnap(@Path("snapId") snapId: String): Response<SnapResponse>
+
+    @GET("friends/list")
+    suspend fun fetchFriendList(
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int
+    ): Response<FriendListResponse>
 }

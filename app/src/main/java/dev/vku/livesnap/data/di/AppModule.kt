@@ -7,8 +7,10 @@ import dagger.hilt.components.SingletonComponent
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.remote.ApiService
 import dev.vku.livesnap.data.remote.AuthInterceptor
+import dev.vku.livesnap.data.repository.DefaultFriendRepository
 import dev.vku.livesnap.data.repository.DefaultSnapRepository
 import dev.vku.livesnap.data.repository.DefaultUsersRepository
+import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import okhttp3.OkHttpClient
@@ -62,7 +64,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun proveSnapRepository(apiService: ApiService): SnapRepository {
+    fun provideSnapRepository(apiService: ApiService): SnapRepository {
         return DefaultSnapRepository(apiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFriendRepository(apiService: ApiService): FriendRepository {
+        return DefaultFriendRepository(apiService)
     }
 }

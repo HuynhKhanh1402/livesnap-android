@@ -1,11 +1,9 @@
 package dev.vku.livesnap.domain.mapper
 
+import dev.vku.livesnap.core.util.DateUtils.convertToDate
+import dev.vku.livesnap.core.util.DateUtils.convertToString
 import dev.vku.livesnap.data.remote.dto.SnapDTO
 import dev.vku.livesnap.domain.model.Snap
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 fun SnapDTO.toDomain(): Snap {
     return Snap(
@@ -15,7 +13,7 @@ fun SnapDTO.toDomain(): Snap {
         user = this.user.toDomain(),
         isOwner = this.isOwner,
         reactions = this.reactions.toDomain(),
-        createdAt = convertStringToDate(this.createdAt)
+        createdAt = this.createdAt.convertToDate()
     )
 }
 
@@ -27,21 +25,8 @@ fun Snap.toSnapDTO(): SnapDTO {
         user = this.user.toDTO(),
         isOwner = this.isOwner,
         reactions = this.reactions.toDTO(),
-        createdAt = convertDateToString(this.createdAt)
+        createdAt = this.createdAt.convertToString()
     )
-}
-
-
-private fun convertStringToDate(dateString: String): Date {
-    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-    format.timeZone = TimeZone.getTimeZone("UTC")
-    return format.parse(dateString)
-}
-
-private fun convertDateToString(date: Date): String {
-    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-    format.timeZone = TimeZone.getTimeZone("UTC")
-    return format.format(date)
 }
 
 

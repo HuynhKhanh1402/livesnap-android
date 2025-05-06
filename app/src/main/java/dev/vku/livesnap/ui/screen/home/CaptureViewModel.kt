@@ -11,17 +11,22 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.vku.livesnap.data.repository.FriendRepository
+import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class CaptureViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val friendRepository: FriendRepository
 ) : ViewModel() {
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission: StateFlow<Boolean> = _hasCameraPermission
@@ -40,6 +45,12 @@ class CaptureViewModel @Inject constructor(
 
     private val _capturedImageUri = MutableStateFlow<Uri?>(null)
     val capturedImageUri: StateFlow<Uri?> = _capturedImageUri
+
+    private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
+    val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
+
+    var isFirstLoad = true
+        private set
 
     fun checkCameraPermission() {
         _hasCameraPermission.value = ContextCompat.checkSelfPermission(
@@ -83,5 +94,32 @@ class CaptureViewModel @Inject constructor(
 
     fun resetCapturedImageURI() {
         _capturedImageUri.value = null
+    }
+
+    fun fetchFriendCount() {
+        viewModelScope.launch {
+            _fetchFriendCountResult.value = LoadingResult.Loading
+
+            try {
+                val response = friendRepository.fetchFriendList()
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    val friendCount = response.body()?.data?.size ?: 0
+                    _fetchFriendCountResult.value = LoadingResult.Success(friendCount)
+                    Log.d("CaptureViewModel", "$friendCount")
+                } else {
+                    _fetchFriendCountResult.value =
+                        LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
+                }
+            } catch (e: Exception) {
+                Log.e("CaptureViewModel", "An error occurred while fetching friend count: ${e.message}", e)
+                _fetchFriendCountResult.value = LoadingResult.Error("An error occurred while fetching: ${e.message}")
+            } finally {
+                isFirstLoad = false
+            }
+        }
+    }
+
+    fun resetFetchFriendCountResult() {
+        _fetchFriendCountResult.value = LoadingResult.Idle
     }
 }
