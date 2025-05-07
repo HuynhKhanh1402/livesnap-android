@@ -6,7 +6,6 @@ data class UserDTO(
     @SerializedName("_id")
     val id: String,
     val username: String,
-    val email: String,
     val firstName: String,
     val lastName: String,
     val avatar: String?
