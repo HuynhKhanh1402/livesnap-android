@@ -16,6 +16,7 @@ object HomeDestination : NavigationDestination {
 @Composable
 fun HomeScreen(
     captureViewModel: CaptureViewModel,
+    friendModalViewModel: FriendModalViewModel,
     feedViewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
@@ -32,9 +33,10 @@ fun HomeScreen(
         when (page) {
             0 -> CaptureScreen(
                 viewModel = captureViewModel,
+                friendModalViewModel = friendModalViewModel,
                 onProfileBtnClicked = onProfileBtnClicked,
                 snackbarHostState = snackbarHostState,
-                onImageCaptured = onImageCaptured
+                onImageCaptured = onImageCaptured,
             )
             1 -> FeedScreen(
                 viewModel = feedViewModel,
