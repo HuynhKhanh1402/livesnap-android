@@ -35,6 +35,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +70,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
+import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.domain.model.FriendRequest
 import dev.vku.livesnap.domain.model.User
 import dev.vku.livesnap.ui.util.LoadingResult
@@ -89,6 +92,11 @@ fun FriendModal(
 
     val incomingFriendRequestListResult by viewModel.fetchIncomingRequestListResult.collectAsState()
     val acceptFriendRequestResult by viewModel.acceptFriendRequestResult.collectAsState()
+
+    val friendListResult by viewModel.fetchFriendListResult.collectAsState()
+
+    val removeFriendResult by viewModel.removeFriendResult.collectAsState()
+
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -159,13 +167,41 @@ fun FriendModal(
                 fontWeight = FontWeight.Bold
             )
 
+            if (friendListResult is LoadingResult.Success) {
+                val data = (friendListResult as LoadingResult.Success<List<Friend>>).data
+                if (data.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Your friend list is empty.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    FriendList(
+                        friends = data,
+                        isRemoving = removeFriendResult is LoadingResult.Loading,
+                        removedFriendId = viewModel.removedFriendId,
+                        onRemoveFriend = { friendId ->
+                            viewModel.removeFriend(friendId.id)
+                        }
+                    )
+                }
 
+            }
         }
     }
 
     LaunchedEffect(viewModel.isFirstLoad) {
         if (viewModel.isFirstLoad) {
             viewModel.fetchIncomingRequestList()
+            viewModel.fetchFriendList()
         }
     }
 
@@ -175,7 +211,7 @@ fun FriendModal(
 
     when (sendFriendRequestResult) {
         is LoadingResult.Success -> {
-            FriendRequestResultDialog(
+            RequestResultDialog(
                 isSuccess = true,
                 message = "Your friend request has been sent successfully.",
                 onDismiss = {
@@ -186,11 +222,34 @@ fun FriendModal(
             Log.d("FriendModal", "Send friend request successfully")
         }
         is LoadingResult.Error -> {
-            FriendRequestResultDialog(
+            RequestResultDialog(
                 isSuccess = false,
                 message = (sendFriendRequestResult as LoadingResult.Error).message,
                 onDismiss = {
                     viewModel.resetSendFriendRequestResult()
+                }
+            )
+        }
+        else -> {
+        }
+    }
+
+    when (removeFriendResult) {
+        is LoadingResult.Success -> {
+            RequestResultDialog(
+                isSuccess = true,
+                message = "Your friend has been removed successfully.",
+                onDismiss = {
+                    viewModel.resetRemoveFriendResult()
+                }
+            )
+        }
+        is LoadingResult.Error -> {
+            RequestResultDialog(
+                isSuccess = false,
+                message = (removeFriendResult as LoadingResult.Error).message,
+                onDismiss = {
+                    viewModel.resetRemoveFriendResult()
                 }
             )
         }
@@ -602,7 +661,112 @@ fun SocialAppIconsRow(
 }
 
 @Composable
-fun FriendRequestResultDialog(
+fun FriendList(
+    friends: List<Friend>,
+    isRemoving: Boolean,
+    removedFriendId: String?,
+    onRemoveFriend: (Friend) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 1600.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(friends) { friend ->
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape
+                        )
+                        .size(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = CircleShape
+                            )
+                            .size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = CircleShape
+                                )
+                                .size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (friend.avatar != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context = LocalContext.current)
+                                        .crossfade(false)
+                                        .data(friend.avatar)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Text(
+                                    text = "${friend.lastName[0]}${friend.firstName[0]}",
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = "${friend.lastName} ${friend.firstName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
+                    )
+
+                    Text(
+                        text = friend.username,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                RemoveFriendButton(
+                    friend = friend,
+                    isRemoving = isRemoving,
+                    removedFriendId = removedFriendId,
+                    onRemoveFriend = onRemoveFriend
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RequestResultDialog(
     isSuccess: Boolean,
     message: String,
     onDismiss: () -> Unit
@@ -625,7 +789,93 @@ fun FriendRequestResultDialog(
             Text(text = if (isSuccess) "Request Sent" else "Request Failed")
         },
         text = {
-            Text(text = message)
+            Text(
+                text = message,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
     )
+}
+
+@Composable
+fun RemoveFriendButton(
+    friend: Friend,
+    isRemoving: Boolean,
+    removedFriendId: String?,
+    onRemoveFriend: (Friend) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(
+            onClick = {
+                if (!isRemoving) {
+                    expanded = true
+                }
+            },
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.error)
+        ) {
+            if (isRemoving && removedFriendId == friend.id) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onError
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Remove friend",
+                    tint = MaterialTheme.colorScheme.onError,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Are you sure you want to remove this friend?")
+            }
+
+            DropdownMenuItem(
+                text = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Confirm", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                onClick = {
+                    expanded = false
+                    onRemoveFriend(friend)
+                }
+            )
+
+            DropdownMenuItem(
+                text = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Cancel")
+                    }
+                },
+                onClick = {
+                    expanded = false
+                }
+            )
+        }
+    }
 }

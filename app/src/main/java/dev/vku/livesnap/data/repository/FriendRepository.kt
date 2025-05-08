@@ -11,6 +11,7 @@ interface FriendRepository {
     suspend fun sendFriendRequest(userId: String): Response<DefaultResponse>
     suspend fun fetchIncomingRequestList(): Response<FriendRequestListResponse>
     suspend fun acceptFriendRequest(requestId: String): Response<DefaultResponse>
+    suspend fun removeFriend(friendId: String): Response<DefaultResponse>
 }
 
 class DefaultFriendRepository(
@@ -33,5 +34,9 @@ class DefaultFriendRepository(
 
     override suspend fun acceptFriendRequest(requestId: String): Response<DefaultResponse> {
         return apiService.acceptFriendRequest(requestId)
+    }
+
+    override suspend fun removeFriend(friendId: String): Response<DefaultResponse> {
+        return apiService.removeFriend(friendId)
     }
 }

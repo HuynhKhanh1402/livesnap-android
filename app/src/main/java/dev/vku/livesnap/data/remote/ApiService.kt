@@ -94,4 +94,7 @@ interface ApiService {
 
     @GET("friends/request/accept/{requestId}")
     suspend fun acceptFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+
+    @GET("friends/remove/{friendId}")
+    suspend fun removeFriend(@Path("friendId") friendId: String): Response<DefaultResponse>
 }

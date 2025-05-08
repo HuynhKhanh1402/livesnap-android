@@ -54,6 +54,11 @@ class FriendModalViewModel @Inject constructor(
 
     private val _fetchFriendListResult = MutableStateFlow<LoadingResult<List<Friend>>>(LoadingResult.Idle)
     val fetchFriendListResult: StateFlow<LoadingResult<List<Friend>>> = _fetchFriendListResult
+    var removedFriendId: String? = null
+        private set
+
+    private val _removeFriendResult = MutableStateFlow<LoadingResult<Unit>>(LoadingResult.Idle)
+    val removeFriendResult: StateFlow<LoadingResult<Unit>> = _removeFriendResult
 
     init {
         observeSearchQuery()
@@ -175,7 +180,7 @@ class FriendModalViewModel @Inject constructor(
                     _fetchFriendListResult.value = LoadingResult.Success(friendList)
                 } else {
                     _fetchFriendListResult.value =
-                        LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
+                        LoadingResult.Error(response.body()?.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
                 Log.e("FriendModalViewModel", "An error occurred while fetching friend count: ${e.message}", e)
@@ -184,5 +189,31 @@ class FriendModalViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun removeFriend(friendId: String) {
+        viewModelScope.launch {
+            removedFriendId = friendId
+            _removeFriendResult.value = LoadingResult.Loading
+            try {
+                delay(2000)
+                _removeFriendResult.value = LoadingResult.Success(Unit)
+                return@launch
+                val response = friendRepository.removeFriend(friendId)
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    _removeFriendResult.value = LoadingResult.Success(Unit)
+                } else {
+                    _removeFriendResult.value =
+                        LoadingResult.Error(response.body()?.message ?: "Unknown error")
+                }
+            } catch (e: Exception) {
+                Log.e("FriendModalViewModel", "An error occurred while removing friend: ${e.message}", e)
+                _removeFriendResult.value = LoadingResult.Error("An error occurred while removing friend: ${e.message}")
+            }
+        }
+    }
+
+    fun resetRemoveFriendResult() {
+        _removeFriendResult.value = LoadingResult.Idle
     }
 }
