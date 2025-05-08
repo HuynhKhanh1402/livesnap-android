@@ -9,11 +9,13 @@ import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.FriendListResponse
+import dev.vku.livesnap.data.remote.dto.response.FriendRequestListResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
 import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
+import dev.vku.livesnap.data.remote.dto.response.UserListResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -53,6 +55,9 @@ interface ApiService {
     @PATCH
     suspend fun updateName(firstName: String, lastName: String): Response<Unit>
 
+    @GET("users/search")
+    suspend fun searchUsers(@Query("username") query: String): Response<UserListResponse>
+
     @GET("snaps/test")
     suspend fun fetchSnaps(
         @Query("page") page: Int,
@@ -80,4 +85,13 @@ interface ApiService {
         @Query("limit") limit: Int,
         @Query("offset") offset: Int
     ): Response<FriendListResponse>
+
+    @POST("friends/request/{userId}")
+    suspend fun sendFriendRequest(@Path("userId") userId: String): Response<DefaultResponse>
+
+    @GET("friends/request/incoming")
+    suspend fun fetchIncomingRequestList(): Response<FriendRequestListResponse>
+
+    @GET("friends/request/accept/{requestId}")
+    suspend fun acceptFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
 }

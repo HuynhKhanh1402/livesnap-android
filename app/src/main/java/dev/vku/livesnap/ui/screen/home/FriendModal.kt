@@ -1,25 +1,39 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,8 +44,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,12 +57,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
-import kotlinx.coroutines.delay
+import dev.vku.livesnap.domain.model.FriendRequest
+import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.ui.util.LoadingResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,15 +80,22 @@ fun FriendModal(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var query by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var results by remember { mutableStateOf(listOf<String>()) }
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchResult by viewModel.searchUsersResult.collectAsState()
+
+    val sendFriendRequestResult by viewModel.sendFriendRequestResult.collectAsState()
+
+    val incomingFriendRequestListResult by viewModel.fetchIncomingRequestListResult.collectAsState()
+    val acceptFriendRequestResult by viewModel.acceptFriendRequestResult.collectAsState()
 
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
         modifier = modifier
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,17 +113,37 @@ fun FriendModal(
             )
 
             SearchBarWithDropdown(
-                query = query,
-                onQueryChange = { query = it },
-                searchResults = results,
-                isLoading = isLoading,
-                onResultClick = { name ->
-                    query = name
-                    results = emptyList()
-                },
+                query = searchQuery,
+                onQueryChange = { viewModel.onSearchQueryChanged(it) },
+                isLoading = searchResult is LoadingResult.Loading,
                 modifier = Modifier
                     .padding(vertical = 16.dp)
             )
+
+            if (searchResult is LoadingResult.Success) {
+                val result = (searchResult as LoadingResult.Success<List<User>>).data
+                SearchUserResult(
+                    users = result,
+                    isRequesting = sendFriendRequestResult is LoadingResult.Loading,
+                    requestedUserId = viewModel.requestedUserId,
+                    onFriendRequest = { user ->
+                        viewModel.sendFriendRequest(user.id)
+                    }
+                )
+            }
+
+            if (incomingFriendRequestListResult is LoadingResult.Success) {
+                val data =
+                    (incomingFriendRequestListResult as LoadingResult.Success<List<FriendRequest>>).data
+                InComingFriendRequest(
+                    requests = data,
+                    isAccepting = acceptFriendRequestResult is LoadingResult.Loading,
+                    acceptedRequestId = viewModel.acceptedRequestId,
+                    onAccept = { request ->
+                        viewModel.acceptFriendRequest(request.id)
+                    }
+                )
+            }
 
             Text(
                 text = "Find friends from other applications",
@@ -112,15 +163,38 @@ fun FriendModal(
         }
     }
 
-    LaunchedEffect(query) {
-        if (query.isNotBlank()) {
-            isLoading = true
-            delay(1000)
-            results = listOf("Alice", "Bob", "Charlie", "David")
-                .filter { it.contains(query, ignoreCase = true) }
-            isLoading = false
-        } else {
-            results = emptyList()
+    LaunchedEffect(viewModel.isFirstLoad) {
+        if (viewModel.isFirstLoad) {
+            viewModel.fetchIncomingRequestList()
+        }
+    }
+
+    if (isLoading) {
+        LoadingOverlay()
+    }
+
+    when (sendFriendRequestResult) {
+        is LoadingResult.Success -> {
+            FriendRequestResultDialog(
+                isSuccess = true,
+                message = "Your friend request has been sent successfully.",
+                onDismiss = {
+                    viewModel.resetSendFriendRequestResult()
+                }
+            )
+
+            Log.d("FriendModal", "Send friend request successfully")
+        }
+        is LoadingResult.Error -> {
+            FriendRequestResultDialog(
+                isSuccess = false,
+                message = (sendFriendRequestResult as LoadingResult.Error).message,
+                onDismiss = {
+                    viewModel.resetSendFriendRequestResult()
+                }
+            )
+        }
+        else -> {
         }
     }
 }
@@ -130,9 +204,7 @@ fun FriendModal(
 fun SearchBarWithDropdown(
     query: String,
     onQueryChange: (String) -> Unit,
-    searchResults: List<String>,
     isLoading: Boolean,
-    onResultClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "Find or add friends"
 ) {
@@ -181,27 +253,267 @@ fun SearchBarWithDropdown(
                 focusedTrailingIconColor = MaterialTheme.colorScheme.primary
             )
         )
+    }
+}
 
-        // ✅ Hiển thị danh sách gợi ý ngay bên dưới mà không dùng DropdownMenu
-        if (showSuggestions && searchResults.isNotEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(vertical = 4.dp)
+@Composable
+fun SearchUserResult(
+    users: List<User>,
+    isRequesting: Boolean,
+    requestedUserId: String?,
+    onFriendRequest: (User) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 400.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        items(users) { user ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                searchResults.forEach { result ->
-                    Text(
-                        text = result,
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color.Gray,
+                            shape = CircleShape
+                        )
+                        .size(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onResultClick(result)
-                                showSuggestions = false
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = CircleShape
+                            )
+                            .size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = CircleShape
+                                )
+                                .size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (user.avatar != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context = LocalContext.current)
+                                        .crossfade(false)
+                                        .data(user.avatar)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Text(
+                                    text = "${user.lastName[0]}${user.firstName[0]}",
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = "${user.lastName} ${user.firstName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
                     )
+
+                    Text(
+                        text = user.username,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = {
+                        onFriendRequest(user)
+                    },
+                    shape = RoundedCornerShape(50),
+                    contentPadding = ButtonDefaults.ContentPadding,
+                    enabled = !isRequesting
+                ) {
+                    if (isRequesting && requestedUserId == user.id) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Add",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InComingFriendRequest(
+    requests: List<FriendRequest>,
+    isAccepting: Boolean,
+    acceptedRequestId: String?,
+    onAccept: (FriendRequest) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Friend request",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            items(requests) { request ->
+                val user = request.user
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = Color.Gray,
+                                shape = CircleShape
+                            )
+                            .size(64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = CircleShape
+                                )
+                                .size(60.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    )
+                                    .size(56.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (user.avatar != null) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context = LocalContext.current)
+                                            .crossfade(false)
+                                            .data(user.avatar)
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${user.lastName[0]}${user.firstName[0]}",
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                    ) {
+                        Text(
+                            text = "${user.lastName} ${user.firstName}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp)
+                        )
+
+                        Text(
+                            text = user.username,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            if (!isAccepting) {
+                                onAccept(request)
+                            }
+                        },
+                        shape = RoundedCornerShape(50),
+                        contentPadding = ButtonDefaults.ContentPadding,
+                        modifier = Modifier
+                            .widthIn(min = 96.dp)
+                    ) {
+                        if (isAccepting && acceptedRequestId == request.id) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(
+                                text = "Accept",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -258,9 +570,11 @@ fun SocialAppIconsRow(
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)
-                .background(Brush.horizontalGradient(
-                    colors = listOf(Color(0xFFF58529), Color(0xFFDD2A7B), Color(0xFF8134AF))
-                ))
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color(0xFFF58529), Color(0xFFDD2A7B), Color(0xFF8134AF))
+                    )
+                )
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_instagram),
@@ -285,4 +599,33 @@ fun SocialAppIconsRow(
             )
         }
     }
+}
+
+@Composable
+fun FriendRequestResultDialog(
+    isSuccess: Boolean,
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK")
+            }
+        },
+        icon = {
+            Icon(
+                imageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error,
+                contentDescription = null,
+                tint = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            )
+        },
+        title = {
+            Text(text = if (isSuccess) "Request Sent" else "Request Failed")
+        },
+        text = {
+            Text(text = message)
+        }
+    )
 }

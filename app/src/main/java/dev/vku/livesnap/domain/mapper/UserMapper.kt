@@ -18,3 +18,7 @@ fun User.toDTO() = UserDTO(
     lastName = this.lastName,
     avatar = this.avatar
 )
+
+fun List<UserDTO>.toDomain(): List<User> = this.map { it.toDomain() }
+
+fun List<User>.toDTO(): List<UserDTO> = this.map { it.toDTO() }
