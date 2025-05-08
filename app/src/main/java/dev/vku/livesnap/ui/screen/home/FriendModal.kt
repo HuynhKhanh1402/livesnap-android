@@ -92,10 +92,13 @@ fun FriendModal(
 
     val incomingFriendRequestListResult by viewModel.fetchIncomingRequestListResult.collectAsState()
     val acceptFriendRequestResult by viewModel.acceptFriendRequestResult.collectAsState()
+    val rejectFriendRequestResult by viewModel.rejectFriendRequestResult.collectAsState()
 
     val friendListResult by viewModel.fetchFriendListResult.collectAsState()
-
     val removeFriendResult by viewModel.removeFriendResult.collectAsState()
+
+    val sentFriendRequestListResult by viewModel.sentFriendRequestListResult.collectAsState()
+    val cancelFriendRequestResult by viewModel.cancelFriendRequestResult.collectAsState()
 
 
     ModalBottomSheet(
@@ -146,9 +149,14 @@ fun FriendModal(
                 InComingFriendRequest(
                     requests = data,
                     isAccepting = acceptFriendRequestResult is LoadingResult.Loading,
-                    acceptedRequestId = viewModel.acceptedRequestId,
+                    acceptingRequestId = viewModel.acceptingRequestId,
                     onAccept = { request ->
                         viewModel.acceptFriendRequest(request.id)
+                    },
+                    isRejecting = rejectFriendRequestResult is LoadingResult.Loading,
+                    rejectingRequestId = viewModel.rejectingRequestId,
+                    onReject = { request ->
+                        viewModel.rejectFriendRequest(request.id)
                     }
                 )
             }
@@ -195,6 +203,18 @@ fun FriendModal(
                 }
 
             }
+
+            if (sentFriendRequestListResult is LoadingResult.Success) {
+                val data = (sentFriendRequestListResult as LoadingResult.Success<List<FriendRequest>>).data
+                SentFriendRequest(
+                    requests = data,
+                    isCancelling = cancelFriendRequestResult is LoadingResult.Loading,
+                    cancellingRequestId = viewModel.cancellingRequestId,
+                    onCancel = { request ->
+                        viewModel.cancelFriendRequest(request.id)
+                    }
+                )
+            }
         }
     }
 
@@ -202,6 +222,7 @@ fun FriendModal(
         if (viewModel.isFirstLoad) {
             viewModel.fetchIncomingRequestList()
             viewModel.fetchFriendList()
+            viewModel.fetchSentFriendRequestList()
         }
     }
 
@@ -234,6 +255,52 @@ fun FriendModal(
         }
     }
 
+    when (acceptFriendRequestResult) {
+        is LoadingResult.Success -> {
+            RequestResultDialog(
+                isSuccess = true,
+                message = "Your friend request has been accepted successfully.",
+                onDismiss = {
+                    viewModel.resetAcceptFriendRequestResult()
+                }
+            )
+        }
+        is LoadingResult.Error -> {
+            RequestResultDialog(
+                isSuccess = false,
+                message = (acceptFriendRequestResult as LoadingResult.Error).message,
+                onDismiss = {
+                    viewModel.resetAcceptFriendRequestResult()
+                }
+            )
+        }
+        else -> {
+        }
+    }
+
+    when (rejectFriendRequestResult) {
+        is LoadingResult.Success -> {
+            RequestResultDialog(
+                isSuccess = true,
+                message = "Your friend request has been rejected successfully.",
+                onDismiss = {
+                    viewModel.resetRejectFriendRequestResult()
+                }
+            )
+        }
+        is LoadingResult.Error -> {
+            RequestResultDialog(
+                isSuccess = false,
+                message = (rejectFriendRequestResult as LoadingResult.Error).message,
+                onDismiss = {
+                    viewModel.resetRejectFriendRequestResult()
+                }
+            )
+        }
+        else -> {
+        }
+    }
+
     when (removeFriendResult) {
         is LoadingResult.Success -> {
             RequestResultDialog(
@@ -250,6 +317,29 @@ fun FriendModal(
                 message = (removeFriendResult as LoadingResult.Error).message,
                 onDismiss = {
                     viewModel.resetRemoveFriendResult()
+                }
+            )
+        }
+        else -> {
+        }
+    }
+
+    when (cancelFriendRequestResult) {
+        is LoadingResult.Success -> {
+            RequestResultDialog(
+                isSuccess = true,
+                message = "Your friend request has been cancelled successfully.",
+                onDismiss = {
+                    viewModel.resetCancelFriendRequestResult()
+                }
+            )
+        }
+        is LoadingResult.Error -> {
+            RequestResultDialog(
+                isSuccess = false,
+                message = (cancelFriendRequestResult as LoadingResult.Error).message,
+                onDismiss = {
+                    viewModel.resetCancelFriendRequestResult()
                 }
             )
         }
@@ -447,15 +537,18 @@ fun SearchUserResult(
 fun InComingFriendRequest(
     requests: List<FriendRequest>,
     isAccepting: Boolean,
-    acceptedRequestId: String?,
+    acceptingRequestId: String?,
     onAccept: (FriendRequest) -> Unit,
+    isRejecting: Boolean,
+    rejectingRequestId: String?,
+    onReject: (FriendRequest) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Friend request",
+            text = "Friend requests",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -557,8 +650,9 @@ fun InComingFriendRequest(
                         contentPadding = ButtonDefaults.ContentPadding,
                         modifier = Modifier
                             .widthIn(min = 96.dp)
+                            .padding(end = 16.dp)
                     ) {
-                        if (isAccepting && acceptedRequestId == request.id) {
+                        if (isAccepting && acceptingRequestId == request.id) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
@@ -570,6 +664,35 @@ fun InComingFriendRequest(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier
+                                    .padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = {
+                            if (!isRejecting) {
+                                onReject(request)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                    ) {
+                        if (isRejecting && rejectingRequestId == request.id) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Reject request",
+                                tint = MaterialTheme.colorScheme.onError,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -782,11 +905,14 @@ fun RequestResultDialog(
             Icon(
                 imageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error,
                 contentDescription = null,
-                tint = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                tint = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(48.dp)
             )
         },
         title = {
-            Text(text = if (isSuccess) "Request Sent" else "Request Failed")
+            if (!isSuccess) {
+                Text(text = "Error")
+            }
         },
         text = {
             Text(
@@ -876,6 +1002,142 @@ fun RemoveFriendButton(
                     expanded = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun SentFriendRequest(
+    requests: List<FriendRequest>,
+    isCancelling: Boolean,
+    cancellingRequestId: String?,
+    onCancel: (FriendRequest) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Sent friend requests",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            items(requests) { request ->
+                val user = request.user
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = Color.Gray,
+                                shape = CircleShape
+                            )
+                            .size(64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = CircleShape
+                                )
+                                .size(60.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    )
+                                    .size(56.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (user.avatar != null) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context = LocalContext.current)
+                                            .crossfade(false)
+                                            .data(user.avatar)
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${user.lastName[0]}${user.firstName[0]}",
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                    ) {
+                        Text(
+                            text = "${user.lastName} ${user.firstName}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp)
+                        )
+
+                        Text(
+                            text = user.username,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(
+                        onClick = {
+                            if (!isCancelling) {
+                                onCancel(request)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                    ) {
+                        if (isCancelling && cancellingRequestId == request.id) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel request",
+                                tint = MaterialTheme.colorScheme.onError,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

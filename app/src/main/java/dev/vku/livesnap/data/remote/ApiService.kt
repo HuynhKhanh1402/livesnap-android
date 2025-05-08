@@ -92,9 +92,18 @@ interface ApiService {
     @GET("friends/request/incoming")
     suspend fun fetchIncomingRequestList(): Response<FriendRequestListResponse>
 
+    @GET("friends/request/outgoing")
+    suspend fun fetchOutgoingRequestList(): Response<FriendRequestListResponse>
+
     @GET("friends/request/accept/{requestId}")
     suspend fun acceptFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
 
+    @GET("fiends/reject/{requestId}")
+    suspend fun rejectFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+
     @GET("friends/remove/{friendId}")
     suspend fun removeFriend(@Path("friendId") friendId: String): Response<DefaultResponse>
+
+    @GET("friends/cancel-request/{requestId}")
+    suspend fun cancelFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
 }
