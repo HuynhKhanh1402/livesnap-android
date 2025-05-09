@@ -16,6 +16,7 @@ uiTextGoogleFonts = "1.7.8"
 navigation = "2.8.9"
 camera = "1.4.2"
 accompanist-pager = "0.35.1-alpha"
+firebase-bom = "33.13.0"
 
 
 [libraries]
@@ -53,6 +54,9 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version = "1.7.8" }
 accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanist-pager" }
 accompanist-pager-indicators = { group = "com.google.accompanist", name = "accompanist-pager-indicators", version.ref = "accompanist-pager" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 
 
 [plugins]
@@ -62,3 +66,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
 ksp-android = { id = "com.google.devtools.ksp"}
+google-services = { id = "com.google.gms.google-services", version = "4.4.2" }
