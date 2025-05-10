@@ -6,6 +6,8 @@ import dev.vku.livesnap.data.remote.dto.request.LoginRequest
 import dev.vku.livesnap.data.remote.dto.request.ReactSnapRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -109,4 +111,10 @@ interface ApiService {
 
     @GET("friends/cancel-request/{requestId}")
     suspend fun cancelFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+
+    @POST("users/check-password")
+    suspend fun checkPassword(@Body request: CheckPasswordRequest): Response<DefaultResponse>
+
+    @PATCH("users/update-email")
+    suspend fun updateEmail(@Body request: UpdateEmailRequest): Response<DefaultResponse>
 }

@@ -39,6 +39,14 @@ sealed class ProfileUiEvent {
     data class ShowSnackbar(val message: String) : ProfileUiEvent()
 }
 
+sealed class ChangeEmailUiState {
+    object Initial : ChangeEmailUiState()
+    object Loading : ChangeEmailUiState()
+    object PasswordVerified : ChangeEmailUiState()
+    object Success : ChangeEmailUiState()
+    data class Error(val message: String) : ChangeEmailUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -60,6 +68,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _uiEvent = MutableSharedFlow<ProfileUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
+
+    private val _changeEmailUiState = MutableStateFlow<ChangeEmailUiState>(ChangeEmailUiState.Initial)
+    val changeEmailUiState: StateFlow<ChangeEmailUiState> = _changeEmailUiState
 
     fun fetchUser() {
         viewModelScope.launch {
@@ -134,5 +145,47 @@ class UserProfileViewModel @Inject constructor(
                 _loadingState.value = false
             }
         }
+    }
+
+    fun checkPassword(password: String) {
+        viewModelScope.launch {
+            _changeEmailUiState.value = ChangeEmailUiState.Loading
+            try {
+                val response = userRepository.checkPassword(password)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.isValid == true) {
+                        _changeEmailUiState.value = ChangeEmailUiState.PasswordVerified
+                    } else {
+                        _changeEmailUiState.value = ChangeEmailUiState.Error(body?.message ?: "Invalid password")
+                    }
+                } else {
+                    _changeEmailUiState.value = ChangeEmailUiState.Error("Invalid password")
+                }
+            } catch (e: Exception) {
+                _changeEmailUiState.value = ChangeEmailUiState.Error(e.message ?: "An error occurred")
+            }
+        }
+    }
+
+    fun updateEmail(email: String) {
+        viewModelScope.launch {
+            _changeEmailUiState.value = ChangeEmailUiState.Loading
+            try {
+                val response = userRepository.updateEmail(email)
+                if (response.isSuccessful) {
+                    _changeEmailUiState.value = ChangeEmailUiState.Success
+                    fetchUser() // Refresh user info
+                } else {
+                    _changeEmailUiState.value = ChangeEmailUiState.Error("Failed to update email")
+                }
+            } catch (e: Exception) {
+                _changeEmailUiState.value = ChangeEmailUiState.Error(e.message ?: "An error occurred")
+            }
+        }
+    }
+
+    fun resetChangeEmailUiState() {
+        _changeEmailUiState.value = ChangeEmailUiState.Initial
     }
 }

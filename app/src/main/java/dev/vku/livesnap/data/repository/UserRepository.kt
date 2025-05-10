@@ -22,6 +22,8 @@ interface UsersRepository {
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
     suspend fun updateName(firstName: String, lastName: String): Response<Unit>
     suspend fun searchUsers(username: String): Response<UserListResponse>
+    suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
+    suspend fun updateEmail(email: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
 }
 
 class DefaultUsersRepository(
@@ -56,5 +58,13 @@ class DefaultUsersRepository(
 
     override suspend fun searchUsers(username: String): Response<UserListResponse> {
         return apiService.searchUsers(username)
+    }
+
+    override suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
+        return apiService.checkPassword(dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest(password))
+    }
+
+    override suspend fun updateEmail(email: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
+        return apiService.updateEmail(dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest(email))
     }
 }

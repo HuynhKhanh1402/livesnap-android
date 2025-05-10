@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -88,6 +89,12 @@ fun UserProfileScreen(
     var user by remember { mutableStateOf<User?>(null) }
     var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
+    var showChangeEmailDialog by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var showPasswordError by remember { mutableStateOf(false) }
+    var showEmailError by remember { mutableStateOf(false) }
+    val changeEmailUiState by viewModel.changeEmailUiState.collectAsState()
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -159,7 +166,9 @@ fun UserProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
             InviteCard(user!!)
             Spacer(modifier = Modifier.height(24.dp))
-            GeneralSection()
+            GeneralSection(
+                onChangeEmailClick = { showChangeEmailDialog = true }
+            )
             Spacer(modifier = Modifier.height(24.dp))
             PrivacyNSecuritySection()
             Spacer(modifier = Modifier.height(24.dp))
@@ -286,6 +295,135 @@ fun UserProfileScreen(
                     text = "Hủy",
                     modifier = Modifier
                         .clickable { showEditNameDialog = false }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    // Modal Bottom Sheet for changing email address
+    if (showChangeEmailDialog) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showChangeEmailDialog = false
+                password = ""
+                email = ""
+                showPasswordError = false
+                showEmailError = false
+                viewModel.resetChangeEmailUiState()
+            },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = if (changeEmailUiState is ChangeEmailUiState.PasswordVerified) "Enter new email address" else "Enter your password",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                if (changeEmailUiState is ChangeEmailUiState.PasswordVerified) {
+                    // Email input
+                    TextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            showEmailError = false
+                        },
+                        label = { Text("New Email") },
+                        isError = showEmailError,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (showEmailError) {
+                        Text("Please enter a valid email", color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                showEmailError = true
+                            } else {
+                                viewModel.updateEmail(email)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Update Email")
+                    }
+                } else if (changeEmailUiState is ChangeEmailUiState.Loading) {
+                    CircularProgressIndicator()
+                } else if (changeEmailUiState is ChangeEmailUiState.Success) {
+                    Text("Email updated successfully!", color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            showChangeEmailDialog = false
+                            password = ""
+                            email = ""
+                            showPasswordError = false
+                            showEmailError = false
+                            viewModel.resetChangeEmailUiState()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Close")
+                    }
+                } else {
+                    // Password input
+                    TextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            showPasswordError = false
+                        },
+                        label = { Text("Password") },
+                        isError = showPasswordError,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (showPasswordError) {
+                        Text("Password cannot be empty", color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            if (password.isBlank()) {
+                                showPasswordError = true
+                            } else {
+                                viewModel.checkPassword(password)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Verify Password")
+                    }
+                }
+                if (changeEmailUiState is ChangeEmailUiState.Error) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = (changeEmailUiState as ChangeEmailUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Text(
+                    text = "Cancel",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showChangeEmailDialog = false
+                            password = ""
+                            email = ""
+                            showPasswordError = false
+                            showEmailError = false
+                            viewModel.resetChangeEmailUiState()
+                        }
                         .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center
                 )
@@ -517,7 +655,9 @@ fun InviteCard(user: User) {
 }
 
 @Composable
-fun GeneralSection() {
+fun GeneralSection(
+    onChangeEmailClick: () -> Unit
+) {
     SectionTitle(
         icon = Icons.Default.Person,
         text = "General"
@@ -544,7 +684,7 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.Default.Mail,
                 text = "Change email address",
-                onClick = { /* TODO */ }
+                onClick = onChangeEmailClick
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
