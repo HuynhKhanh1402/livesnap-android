@@ -61,7 +61,7 @@ class FirebaseMessageRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-     suspend fun sendMessage(chatId: String, content: String): Result<Message> = try {
+     suspend fun sendMessage(chatId: String, content: String, snapId: String? = null): Result<Message> = try {
         val userId = getCurrentUserId() ?: throw IllegalStateException("User not logged in")
         
         // Get chat to find the receiver
@@ -77,6 +77,7 @@ class FirebaseMessageRepository @Inject constructor(
             senderId = userId,
             receiverId = receiverId,
             content = content,
+            snapId = snapId,
             timestamp = Date()
         )
 
@@ -136,6 +137,29 @@ class FirebaseMessageRepository @Inject constructor(
             }
 
         awaitClose { listener.remove() }
+    }
+
+    suspend fun getOrCreateChat(participantId: String): Result<Chat> = try {
+        val userId = getCurrentUserId() ?: throw IllegalStateException("User not logged in")
+        // Tìm chat đã tồn tại giữa 2 user
+        val querySnapshot = chatsCollection
+            .whereArrayContains("participants", userId)
+            .get().await()
+        val chat = querySnapshot.documents
+            .mapNotNull { it.toObject(Chat::class.java)?.copy(id = it.id) }
+            .find { it.participants.contains(participantId) }
+        if (chat != null) {
+            Result.success(chat)
+        } else {
+            // Nếu chưa có thì tạo mới
+            val newChat = Chat(participants = listOf(userId, participantId))
+            val docRef = chatsCollection.document()
+            val chatWithId = newChat.copy(id = docRef.id)
+            docRef.set(chatWithId).await()
+            Result.success(chatWithId)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     private suspend fun getCurrentUserId(): String? {

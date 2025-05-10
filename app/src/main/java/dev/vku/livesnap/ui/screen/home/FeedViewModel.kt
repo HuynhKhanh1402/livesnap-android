@@ -191,17 +191,21 @@ class FeedViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Create chat if not exists
-                val chatResult = firebaseMessageRepository.createChat(snap.user.id)
+                // Get or create chat
+                val chatResult = firebaseMessageRepository.getOrCreateChat(snap.user.id)
                 if (chatResult.isFailure) {
-                    _sendMessageResult.value = LoadingResult.Error("Failed to create chat: ${chatResult.exceptionOrNull()?.message}")
+                    _sendMessageResult.value = LoadingResult.Error("Failed to get or create chat: ${chatResult.exceptionOrNull()?.message}")
                     return@launch
                 }
 
                 val chat = chatResult.getOrNull()!!
                 
-                // Send message
-                val messageResult = firebaseMessageRepository.sendMessage(chat.id, message)
+                // Send message kèm snapId
+                val messageResult = firebaseMessageRepository.sendMessage(
+                    chat.id,
+                    message,
+                    snapId = snap.id
+                )
                 if (messageResult.isSuccess) {
                     _sendMessageResult.value = LoadingResult.Success("Message sent successfully")
                 } else {
