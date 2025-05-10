@@ -27,7 +27,7 @@ interface UsersRepository {
 }
 
 class DefaultUsersRepository(
-    private val apiService: ApiService
+    internal val apiService: ApiService
 ) : UsersRepository {
     override suspend fun registerUser(user: UserRegistrationRequest): UserRegistrationResponse {
         return apiService.registerUser(user)
