@@ -46,6 +46,9 @@ interface ApiService {
     @GET("users/detail")
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
 
+    @GET("users/{userId}")
+    suspend fun getUserById(@Path("userId") userId: String): Response<UserDetailResponse>
+
     @Multipart
     @POST("users/set-avatar")
     suspend fun setAvatar(

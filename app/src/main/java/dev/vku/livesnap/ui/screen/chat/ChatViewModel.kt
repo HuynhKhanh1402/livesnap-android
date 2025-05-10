@@ -7,8 +7,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.data.repository.SnapRepository
+import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.model.Message
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.domain.model.User
 import dev.vku.livesnap.domain.mapper.toDomain
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,7 +21,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val messageRepository: FirebaseMessageRepository,
     private val tokenManager: TokenManager,
-    private val snapRepository: SnapRepository
+    private val snapRepository: SnapRepository,
+    private val userRepository: UsersRepository
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
@@ -30,6 +33,9 @@ class ChatViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _otherUser = MutableStateFlow<User?>(null)
+    val otherUser: StateFlow<User?> = _otherUser.asStateFlow()
 
     private var currentChatId: String? = null
     private var currentLimit = 20L
@@ -43,14 +49,40 @@ class ChatViewModel @Inject constructor(
         currentLimit = 20L
 
         viewModelScope.launch {
-            messageRepository.getMessages(chatId, currentLimit)
-                .catch { e ->
-                    _error.value = e.message
-                    Log.e("ChatViewModel", "Error loading messages: ${e.message}", e)
+            _isLoading.value = true
+            try {
+                // Load chat details to get other user's ID
+                val chat = messageRepository.getChat(chatId)
+                val currentUserId = getCurrentUserId()
+                val otherUserId = chat.participants.firstOrNull { it != currentUserId }
+                
+                // Load other user's details
+                otherUserId?.let { userId ->
+                    try {
+                        val response = userRepository.getUserById(userId)
+                        if (response.isSuccessful) {
+                            _otherUser.value = response.body()?.data?.user?.toDomain()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChatViewModel", "Error loading user details: ${e.message}", e)
+                    }
                 }
-                .collect { messages ->
-                    _messages.value = messages
-                }
+
+                // Load messages
+                messageRepository.getMessages(chatId, currentLimit)
+                    .catch { e ->
+                        _error.value = e.message
+                        Log.e("ChatViewModel", "Error loading messages: ${e.message}", e)
+                    }
+                    .collect { messages ->
+                        _messages.value = messages
+                    }
+            } catch (e: Exception) {
+                _error.value = e.message
+                Log.e("ChatViewModel", "Error loading chat: ${e.message}", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 

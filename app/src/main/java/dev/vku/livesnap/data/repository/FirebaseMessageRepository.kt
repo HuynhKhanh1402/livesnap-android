@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
+import android.util.Log
 
 class FirebaseMessageRepository @Inject constructor(
     firestore: FirebaseFirestore,
@@ -20,45 +21,68 @@ class FirebaseMessageRepository @Inject constructor(
     private val messagesCollection = firestore.collection("messages")
 
     fun getChats(): Flow<List<Chat>> = callbackFlow {
-        val userId = getCurrentUserId() ?: throw IllegalStateException("User not logged in")
-        
-        val listener = chatsCollection
-            .whereArrayContains("participants", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
+        try {
+            val userId = getCurrentUserId() ?: throw IllegalStateException("User not logged in")
+            
+            val listener = chatsCollection
+                .whereArrayContains("participants", userId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.e("FirebaseMessageRepository", "Error in getChats snapshot: ${error.message}", error)
+                        close(error)
+                        return@addSnapshotListener
+                    }
+
+                    val chats = snapshot?.documents?.mapNotNull { doc ->
+                        doc.toObject(Chat::class.java)?.copy(id = doc.id)
+                    } ?: emptyList()
+                    
+                    trySend(chats)
                 }
 
-                val chats = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Chat::class.java)?.copy(id = doc.id)
-                } ?: emptyList()
-                
-                trySend(chats)
-            }
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.e("FirebaseMessageRepository", "Error in getChats: ${e.message}", e)
+            close(e)
+        }
+    }
 
-        awaitClose { listener.remove() }
+    suspend fun getChat(chatId: String): Chat {
+        return try {
+            val doc = chatsCollection.document(chatId).get().await()
+            doc.toObject(Chat::class.java)?.copy(id = doc.id)
+                ?: throw IllegalStateException("Chat not found")
+        } catch (e: Exception) {
+            Log.e("FirebaseMessageRepository", "Error getting chat: ${e.message}", e)
+            throw e
+        }
     }
 
     fun getMessages(chatId: String, limit: Long): Flow<List<Message>> = callbackFlow {
-        val listener = messagesCollection
-            .whereEqualTo("chatId", chatId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(limit)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
+        try {
+            val listener = messagesCollection
+                .whereEqualTo("chatId", chatId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(limit)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.e("FirebaseMessageRepository", "Error in getMessages snapshot: ${error.message}", error)
+                        close(error)
+                        return@addSnapshotListener
+                    }
+
+                    val messages = snapshot?.documents?.mapNotNull { doc ->
+                        doc.toObject(Message::class.java)?.copy(id = doc.id)
+                    } ?: emptyList()
+                    
+                    trySend(messages)
                 }
 
-                val messages = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Message::class.java)?.copy(id = doc.id)
-                } ?: emptyList()
-                
-                trySend(messages)
-            }
-
-        awaitClose { listener.remove() }
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.e("FirebaseMessageRepository", "Error in getMessages: ${e.message}", e)
+            close(e)
+        }
     }
 
      suspend fun sendMessage(chatId: String, content: String, snapId: String? = null): Result<Message> = try {
@@ -92,13 +116,18 @@ class FirebaseMessageRepository @Inject constructor(
             .await()
         Result.success(messageWithId)
     } catch (e: Exception) {
+        Log.e("FirebaseMessageRepository", "Error sending message: ${e.message}", e)
         Result.failure(e)
     }
 
     suspend fun markMessageAsRead(messageId: String) {
-        messagesCollection.document(messageId)
-            .update("isRead", true)
-            .await()
+        try {
+            messagesCollection.document(messageId)
+                .update("isRead", true)
+                .await()
+        } catch (e: Exception) {
+            Log.e("FirebaseMessageRepository", "Error marking message as read: ${e.message}", e)
+        }
     }
 
      suspend fun createChat(participantId: String): Result<Chat> = try {
@@ -115,28 +144,35 @@ class FirebaseMessageRepository @Inject constructor(
         
         Result.success(chatWithId)
     } catch (e: Exception) {
+        Log.e("FirebaseMessageRepository", "Error creating chat: ${e.message}", e)
         Result.failure(e)
     }
 
     fun observeNewMessages(chatId: String): Flow<Message> = callbackFlow {
-        val listener = messagesCollection
-            .whereEqualTo("chatId", chatId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(1)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
+        try {
+            val listener = messagesCollection
+                .whereEqualTo("chatId", chatId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.e("FirebaseMessageRepository", "Error in observeNewMessages snapshot: ${error.message}", error)
+                        close(error)
+                        return@addSnapshotListener
+                    }
 
-                snapshot?.documents?.firstOrNull()?.let { doc ->
-                    doc.toObject(Message::class.java)?.copy(id = doc.id)?.let { message ->
-                        trySend(message)
+                    snapshot?.documents?.firstOrNull()?.let { doc ->
+                        doc.toObject(Message::class.java)?.copy(id = doc.id)?.let { message ->
+                            trySend(message)
+                        }
                     }
                 }
-            }
 
-        awaitClose { listener.remove() }
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.e("FirebaseMessageRepository", "Error in observeNewMessages: ${e.message}", e)
+            close(e)
+        }
     }
 
     suspend fun getOrCreateChat(participantId: String): Result<Chat> = try {

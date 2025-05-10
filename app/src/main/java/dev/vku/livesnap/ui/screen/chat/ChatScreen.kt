@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,6 +56,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +68,7 @@ fun ChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val otherUser by viewModel.otherUser.collectAsState()
     val listState = rememberLazyListState()
     var messageText by remember { mutableStateOf("") }
 
@@ -76,7 +79,44 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chat") },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Avatar
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (otherUser?.avatar != null) {
+                                AsyncImage(
+                                    model = otherUser?.avatar,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                val initials = otherUser?.let { 
+                                    "${it.firstName.firstOrNull() ?: ""}${it.lastName.firstOrNull() ?: ""}"
+                                }?.uppercase() ?: "?"
+                                Text(
+                                    text = initials,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        // Name
+                        Text(
+                            text = otherUser?.let { "${it.firstName} ${it.lastName}" } ?: "Loading...",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -101,15 +141,21 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
         ) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                reverseLayout = true
+                reverseLayout = true,
             ) {
-                if (isLoading) {
+                if (isLoading && messages.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier.fillMaxWidth(),

@@ -2,24 +2,43 @@ package dev.vku.livesnap.ui.screen.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import dev.vku.livesnap.domain.model.Chat
+import coil.compose.AsyncImage
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 object ChatListDestination : NavigationDestination {
     override val route = "chat_list"
@@ -68,10 +87,10 @@ fun ChatListScreen(
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
-                    items(chats) { chat ->
+                    items(chats) { chatWithUser ->
                         ChatItem(
-                            chat = chat,
-                            onClick = { onChatClick(chat.id) }
+                            chatWithUser = chatWithUser,
+                            onClick = { onChatClick(chatWithUser.chat.id) }
                         )
                     }
                 }
@@ -92,9 +111,16 @@ fun ChatListScreen(
 
 @Composable
 fun ChatItem(
-    chat: Chat,
+    chatWithUser: ChatWithUser,
     onClick: () -> Unit
 ) {
+    val user = chatWithUser.otherUser
+    val displayName = user?.let { "${it.firstName} ${it.lastName}" } ?: "Unknown User"
+    val avatarUrl = user?.avatar
+    val initials = user?.let { 
+        "${it.firstName.firstOrNull() ?: ""}${it.lastName.firstOrNull() ?: ""}"
+    }?.uppercase() ?: "?"
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,11 +136,19 @@ fun ChatItem(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            if (avatarUrl != null) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = initials,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -124,15 +158,15 @@ fun ChatItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "User Name", // TODO: Get user name from participants
+                text = displayName,
                 style = MaterialTheme.typography.titleMedium
             )
 
-            if (chat.lastMessage != null) {
+            if (chatWithUser.chat.lastMessage != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = chat.lastMessage.content,
+                    text = chatWithUser.chat.lastMessage.content,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     maxLines = 1,
@@ -145,15 +179,15 @@ fun ChatItem(
         Column(
             horizontalAlignment = Alignment.End
         ) {
-            if (chat.lastMessage != null) {
+            if (chatWithUser.chat.lastMessage != null) {
                 Text(
-                    text = formatChatTime(chat.lastMessage.timestamp),
+                    text = formatChatTime(chatWithUser.chat.lastMessage.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
 
-            if (chat.unreadCount > 0) {
+            if (chatWithUser.chat.unreadCount > 0) {
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Box(
@@ -164,7 +198,7 @@ fun ChatItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = chat.unreadCount.toString(),
+                        text = chatWithUser.chat.unreadCount.toString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
