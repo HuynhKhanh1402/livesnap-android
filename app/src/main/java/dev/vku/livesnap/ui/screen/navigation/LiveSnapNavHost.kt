@@ -42,6 +42,9 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
+import dev.vku.livesnap.ui.screen.chat.ChatListDestination
+import dev.vku.livesnap.ui.screen.chat.ChatListScreen
+import dev.vku.livesnap.ui.screen.chat.ChatScreen
 import dev.vku.livesnap.ui.screen.home.CaptureViewModel
 import dev.vku.livesnap.ui.screen.home.FeedViewModel
 import dev.vku.livesnap.ui.screen.home.FriendModalViewModel
@@ -57,7 +60,7 @@ import dev.vku.livesnap.ui.screen.profile.UserProfileViewModel
 @Composable
 fun LiveSnapNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    startDestination: String = HomeDestination.route
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -110,8 +113,8 @@ fun LiveSnapNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AuthSelectDestination.route,
-            modifier = modifier.padding(innerPadding)
+            startDestination = startDestination,
+            modifier = Modifier.padding(innerPadding)
         ) {
             composable(route = AuthSelectDestination.route) {
                 AuthSelectScreen(
@@ -183,6 +186,9 @@ fun LiveSnapNavHost(
                     },
                     onImageCaptured = { uri ->
                         navController.navigate("upload?uri=${uri}")
+                    },
+                    onChatClick = {
+                        navController.navigate(ChatListDestination.route)
                     }
                 )
             }
@@ -219,6 +225,24 @@ fun LiveSnapNavHost(
                         navController.navigate(AuthSelectDestination.route) {
                             popUpTo(0) { inclusive = true }
                         }
+                    }
+                )
+            }
+
+            composable(route = ChatListDestination.route) {
+                ChatListScreen(
+                    onChatClick = { chatId ->
+                        navController.navigate(ChatDestination.createNavigationRoute(chatId))
+                    }
+                )
+            }
+
+            composable(route = ChatDestination.route) { backStackEntry ->
+                val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
+                ChatScreen(
+                    chatId = chatId,
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }

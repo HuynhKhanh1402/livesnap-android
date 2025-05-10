@@ -1,5 +1,6 @@
 package dev.vku.livesnap.data.di
 
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,6 +11,7 @@ import dev.vku.livesnap.data.remote.AuthInterceptor
 import dev.vku.livesnap.data.repository.DefaultFriendRepository
 import dev.vku.livesnap.data.repository.DefaultSnapRepository
 import dev.vku.livesnap.data.repository.DefaultUsersRepository
+import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.data.repository.UsersRepository
@@ -72,5 +74,14 @@ object AppModule {
     @Singleton
     fun provideFriendRepository(apiService: ApiService): FriendRepository {
         return DefaultFriendRepository(apiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseMessageRepository(tokenManager: TokenManager): FirebaseMessageRepository {
+        return FirebaseMessageRepository(
+            firestore =  FirebaseFirestore.getInstance(),
+            tokenManager = tokenManager
+        )
     }
 }

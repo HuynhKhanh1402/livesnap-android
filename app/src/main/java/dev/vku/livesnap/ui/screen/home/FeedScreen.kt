@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Collections
@@ -38,6 +40,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -95,10 +99,12 @@ import java.util.concurrent.TimeUnit
 fun FeedScreen(
     viewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
-    onProfileBtnClicked: () -> Unit
+    onProfileBtnClicked: () -> Unit,
+    onChatClick: () -> Unit = {}
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
     val reactSnapResult by viewModel.reactSnapResult.collectAsState()
+    val sendMessageResult by viewModel.sendMessageResult.collectAsState()
 
     val snaps = viewModel.snaps
     val isLoading = viewModel.isLoading
@@ -147,6 +153,20 @@ fun FeedScreen(
         }
     }
 
+    LaunchedEffect(sendMessageResult) {
+        when (sendMessageResult) {
+            is LoadingResult.Success -> {
+                snackbarHostState.showSnackbar((sendMessageResult as LoadingResult.Success).data)
+                viewModel.resetSendMessageResult()
+            }
+            is LoadingResult.Error -> {
+                snackbarHostState.showSnackbar((sendMessageResult as LoadingResult.Error).message)
+                viewModel.resetSendMessageResult()
+            }
+            else -> {}
+        }
+    }
+
     if (!viewModel.isFirstLoad && snaps.isEmpty()) {
         EmptyFeed(
             onInviteClick = {
@@ -168,6 +188,7 @@ fun FeedScreen(
                     .height(screenHeight),
                 isFetchingDetail = isFetchingCurrentSnap,
                 onProfileBtnClicked = onProfileBtnClicked,
+                onChatBtnClicked = onChatClick,
                 onDeleteBtnClicked = {
                     viewModel.deleteSnap(snap.id, {
                         coroutineScope.launch {
@@ -181,6 +202,9 @@ fun FeedScreen(
                 },
                 onReact = { emoji ->
                     viewModel.reactSnap(snap, emoji)
+                },
+                onSendMessage = {message ->
+                    viewModel.sendMessage(snap, message)
                 }
             )
         }
@@ -232,8 +256,10 @@ fun Feed(
     snap: Snap,
     isFetchingDetail: Boolean,
     onProfileBtnClicked: () -> Unit,
+    onChatBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
-    onReact: (String) -> Unit
+    onReact: (String) -> Unit,
+    onSendMessage: (String) -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
@@ -250,7 +276,10 @@ fun Feed(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         FeedTopBar(
-            onProfileBtnClicked = onProfileBtnClicked
+            onProfileBtnClicked = onProfileBtnClicked,
+            onChatClick = {
+                onChatBtnClicked()
+            }
         )
 
         Spacer(Modifier.height(64.dp))
@@ -292,7 +321,8 @@ fun Feed(
                 )
             } else {
                 ReactionBar(
-                    onReact = onReact
+                    onReact = onReact,
+                    onSendMessage = onSendMessage
                 )
             }
 
@@ -417,7 +447,8 @@ fun Feed(
 
 @Composable
 fun FeedTopBar(
-    onProfileBtnClicked: () -> Unit
+    onProfileBtnClicked: () -> Unit,
+    onChatClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -429,7 +460,8 @@ fun FeedTopBar(
                 top = 8.dp,
                 bottom = 8.dp
             ),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
@@ -469,7 +501,7 @@ fun FeedTopBar(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Tất cả bạn bè",
+                    text = "Everyone",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -485,6 +517,7 @@ fun FeedTopBar(
                         .size(20.dp)
                 )
             }
+
         }
 
         Box(
@@ -497,11 +530,11 @@ fun FeedTopBar(
             contentAlignment = Alignment.Center
         ) {
             IconButton(
-                onClick = {}
+                onClick = { onChatClick() }
             ) {
                 Icon(
                     imageVector = Icons.Default.ChatBubble,
-                    contentDescription = "Comments",
+                    contentDescription = "Messages",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(32.dp)
                 )
@@ -639,8 +672,12 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: 
 
 @Composable
 fun ReactionBar(
-    onReact: (String) -> Unit
+    onReact: (String) -> Unit,
+    onSendMessage: (String) -> Unit
 ) {
+    var showMessageInput by remember { mutableStateOf(false) }
+    var messageText by remember { mutableStateOf("") }
+
     Box(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -649,67 +686,115 @@ fun ReactionBar(
                 shape = RoundedCornerShape(percent = 50)
             ),
     ) {
-        Row(
-            modifier = Modifier
-                .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = 8.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Gửi tin nhắn...",
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.W600
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
+        if (showMessageInput) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 8.dp,
+                        bottom = 8.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(24.dp)),
+                    placeholder = { Text("Type a message...") },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    maxLines = 1
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                IconButton(
+                    onClick = {
+                        if (messageText.isNotBlank()) {
+                            onSendMessage(messageText)
+                            messageText = ""
+                            showMessageInput = false
+                        }
+                    },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 8.dp,
+                        bottom = 8.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "❤️",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .clickable(onClick = {
-                            onReact("❤️")
-                        })
+                    text = "Gửi tin nhắn...",
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.W600,
+                    modifier = Modifier.clickable { showMessageInput = true }
                 )
 
-                Text(
-                    text = "🔥",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .clickable(onClick = {
-                            onReact("🔥")
-                        })
-                )
+                Spacer(modifier = Modifier.weight(1f))
 
-                Text(
-                    text = "😂",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .clickable(onClick = {
-                            onReact("😂")
-                        })
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "❤️",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .clickable(onClick = {
+                                onReact("❤️")
+                            })
+                    )
 
-                Icon(
-                    imageVector = Icons.Filled.AddReaction,
-                    contentDescription = "Add reaction",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable(onClick = {})
-                )
+                    Text(
+                        text = "🔥",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .clickable(onClick = {
+                                onReact("🔥")
+                            })
+                    )
+
+                    Text(
+                        text = "😂",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .clickable(onClick = {
+                                onReact("😂")
+                            })
+                    )
+
+                    Icon(
+                        imageVector = Icons.Filled.AddReaction,
+                        contentDescription = "Add reaction",
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable(onClick = {})
+                    )
+                }
             }
         }
-
-
     }
 }
 
@@ -906,7 +991,7 @@ fun EmptyFeed(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Your friends haven’t posted anything.\nBe the first to share a moment!",
+            text = "Your friends haven't posted anything.\nBe the first to share a moment!",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
             textAlign = TextAlign.Center

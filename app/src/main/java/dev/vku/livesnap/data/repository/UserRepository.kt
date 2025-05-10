@@ -20,6 +20,7 @@ interface UsersRepository {
     suspend fun checkUsernameExist(username: String): CheckUsernameExistResponse
     suspend fun login(email: String, password: String): LoginResponse
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
+    suspend fun getUserById(userId: String): Response<UserDetailResponse>
     suspend fun updateName(firstName: String, lastName: String): Response<Unit>
     suspend fun searchUsers(username: String): Response<UserListResponse>
     suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
@@ -47,6 +48,10 @@ class DefaultUsersRepository(
 
     override suspend fun fetchUserDetail(): Response<UserDetailResponse> {
         return apiService.fetchUserDetail()
+    }
+
+    override suspend fun getUserById(userId: String): Response<UserDetailResponse> {
+        return apiService.getUserById(userId)
     }
 
     override suspend fun updateName(

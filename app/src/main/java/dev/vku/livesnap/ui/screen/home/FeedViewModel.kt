@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.repository.SnapRepository
+import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
@@ -26,13 +27,17 @@ sealed class LoadSnapResult {
 
 @HiltViewModel
 class FeedViewModel @Inject constructor(
-    val snapRepository: SnapRepository
+    val snapRepository: SnapRepository,
+    private val firebaseMessageRepository: FirebaseMessageRepository
 ) : ViewModel() {
     private var _loadSnapResult = MutableStateFlow<LoadSnapResult>(LoadSnapResult.Idle)
     var loadSnapResult: StateFlow<LoadSnapResult> = _loadSnapResult
 
     private var _reactSnapResult = MutableStateFlow<LoadingResult<String>>(LoadingResult.Idle)
     var reactSnapResult: StateFlow<LoadingResult<String>> = _reactSnapResult
+
+    private var _sendMessageResult = MutableStateFlow<LoadingResult<String>>(LoadingResult.Idle)
+    var sendMessageResult: StateFlow<LoadingResult<String>> = _sendMessageResult
 
     var isFirstLoad = true
 
@@ -167,6 +172,56 @@ class FeedViewModel @Inject constructor(
                 _isFetchingCurrentSnap.value = false
             }
         }
+    }
+
+    fun sendMessage(snap: Snap, message: String) {
+        viewModelScope.launch {
+            isLoading = true
+            _sendMessageResult.value = LoadingResult.Loading
+
+            try {
+                // Validate message
+                if (message.isBlank()) {
+                    _sendMessageResult.value = LoadingResult.Error("Message cannot be empty")
+                    return@launch
+                }
+
+                if (message.length > 500) {
+                    _sendMessageResult.value = LoadingResult.Error("Message is too long (max 500 characters)")
+                    return@launch
+                }
+
+                // Get or create chat
+                val chatResult = firebaseMessageRepository.getOrCreateChat(snap.user.id)
+                if (chatResult.isFailure) {
+                    _sendMessageResult.value = LoadingResult.Error("Failed to get or create chat: ${chatResult.exceptionOrNull()?.message}")
+                    return@launch
+                }
+
+                val chat = chatResult.getOrNull()!!
+                
+                // Send message kèm snapId
+                val messageResult = firebaseMessageRepository.sendMessage(
+                    chat.id,
+                    message,
+                    snapId = snap.id
+                )
+                if (messageResult.isSuccess) {
+                    _sendMessageResult.value = LoadingResult.Success("Message sent successfully")
+                } else {
+                    _sendMessageResult.value = LoadingResult.Error("Failed to send message: ${messageResult.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Exception occurred while sending message: ${e.message}", e)
+                _sendMessageResult.value = LoadingResult.Error("An error occurred: ${e.message}")
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun resetSendMessageResult() {
+        _sendMessageResult.value = LoadingResult.Idle
     }
 
     private fun isSingleEmojiICU(text: String): Boolean {

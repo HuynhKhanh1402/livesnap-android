@@ -67,6 +67,7 @@ fun CaptureScreen(
     friendModalViewModel: FriendModalViewModel,
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
+    onChatBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -122,7 +123,8 @@ fun CaptureScreen(
                 onProfileBtnClicked = onProfileBtnClicked,
                 onFriendsClicked = {
                     showFriendSheet = true
-                }
+                },
+                onChatBtnClicked = onChatBtnClicked
             )
 
             Spacer(Modifier.height(64.dp))
@@ -195,7 +197,8 @@ fun CaptureTopBar(
     friendCount: Int,
     isFetchingFriendCount: Boolean,
     onProfileBtnClicked: () -> Unit,
-    onFriendsClicked: () -> Unit
+    onFriendsClicked: () -> Unit,
+    onChatBtnClicked: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -292,7 +295,7 @@ fun CaptureTopBar(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = {}) {
+            IconButton(onClick = onChatBtnClicked) {
                 Icon(
                     imageVector = Icons.Default.ChatBubble,
                     contentDescription = "Comments",
