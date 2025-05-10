@@ -1,17 +1,21 @@
 package dev.vku.livesnap.ui.screen.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.domain.model.Message
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val messageRepository: FirebaseMessageRepository
+    private val messageRepository: FirebaseMessageRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
@@ -35,6 +39,7 @@ class ChatViewModel @Inject constructor(
             messageRepository.getMessages(chatId, currentLimit)
                 .catch { e ->
                     _error.value = e.message
+                    Log.e("ChatViewModel", "Error loading messages: ${e.message}", e)
                 }
                 .collect { messages ->
                     _messages.value = messages
@@ -84,5 +89,23 @@ class ChatViewModel @Inject constructor(
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun getCurrentUserId(): String {
+        val token = runBlocking {
+            tokenManager.getToken() ?: return@runBlocking ""
+        }
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return ""
+
+            val payload = parts[1]
+            val decodedPayload = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+            val jsonString = String(decodedPayload)
+            val jsonObject = org.json.JSONObject(jsonString)
+            jsonObject.getString("userId")
+        } catch (e: Exception) {
+            ""
+        }
     }
 } 

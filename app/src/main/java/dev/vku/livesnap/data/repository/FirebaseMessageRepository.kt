@@ -64,8 +64,18 @@ class FirebaseMessageRepository @Inject constructor(
      suspend fun sendMessage(chatId: String, content: String): Result<Message> = try {
         val userId = getCurrentUserId() ?: throw IllegalStateException("User not logged in")
         
+        // Get chat to find the receiver
+        val chat = chatsCollection.document(chatId).get().await().toObject(Chat::class.java)
+            ?: throw IllegalStateException("Chat not found")
+        
+        // Find the receiver ID (the other participant in the chat)
+        val receiverId = chat.participants.find { it != userId }
+            ?: throw IllegalStateException("Receiver not found in chat participants")
+        
         val message = Message(
+            chatId = chatId,
             senderId = userId,
+            receiverId = receiverId,
             content = content,
             timestamp = Date()
         )
@@ -79,7 +89,6 @@ class FirebaseMessageRepository @Inject constructor(
         chatsCollection.document(chatId)
             .update("lastMessage", messageWithId)
             .await()
-
         Result.success(messageWithId)
     } catch (e: Exception) {
         Result.failure(e)
@@ -130,6 +139,18 @@ class FirebaseMessageRepository @Inject constructor(
     }
 
     private suspend fun getCurrentUserId(): String? {
-        return tokenManager.getToken()
+        val token = tokenManager.getToken() ?: return null
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return null
+            
+            val payload = parts[1]
+            val decodedPayload = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+            val jsonString = String(decodedPayload)
+            val jsonObject = org.json.JSONObject(jsonString)
+            jsonObject.getString("userId")
+        } catch (e: Exception) {
+            null
+        }
     }
 } 
