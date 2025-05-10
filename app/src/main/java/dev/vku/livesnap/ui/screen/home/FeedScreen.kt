@@ -95,7 +95,8 @@ import java.util.concurrent.TimeUnit
 fun FeedScreen(
     viewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
-    onProfileBtnClicked: () -> Unit
+    onProfileBtnClicked: () -> Unit,
+    onChatClick: () -> Unit = {}
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
     val reactSnapResult by viewModel.reactSnapResult.collectAsState()
@@ -168,6 +169,7 @@ fun FeedScreen(
                     .height(screenHeight),
                 isFetchingDetail = isFetchingCurrentSnap,
                 onProfileBtnClicked = onProfileBtnClicked,
+                onChatBtnClicked = onChatClick,
                 onDeleteBtnClicked = {
                     viewModel.deleteSnap(snap.id, {
                         coroutineScope.launch {
@@ -232,6 +234,7 @@ fun Feed(
     snap: Snap,
     isFetchingDetail: Boolean,
     onProfileBtnClicked: () -> Unit,
+    onChatBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
     onReact: (String) -> Unit
 ) {
@@ -250,7 +253,10 @@ fun Feed(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         FeedTopBar(
-            onProfileBtnClicked = onProfileBtnClicked
+            onProfileBtnClicked = onProfileBtnClicked,
+            onChatClick = {
+                onChatBtnClicked()
+            }
         )
 
         Spacer(Modifier.height(64.dp))
@@ -417,95 +423,30 @@ fun Feed(
 
 @Composable
 fun FeedTopBar(
-    onProfileBtnClicked: () -> Unit
+    onProfileBtnClicked: () -> Unit,
+    onChatClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 8.dp
-            ),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            IconButton(onClick = onProfileBtnClicked) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+        IconButton(onClick = onProfileBtnClicked) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Profile",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
         }
 
-        Box(
-            modifier = Modifier
-                .height(64.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(percent = 50)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "Tất cả bạn bè",
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                )
-
-                Icon(
-                    imageVector = Icons.Default.ExpandMore,
-                    contentDescription = "Show more friends",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier
-                        .size(20.dp)
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            IconButton(
-                onClick = {}
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChatBubble,
-                    contentDescription = "Comments",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+        IconButton(onClick = onChatClick) {
+            Icon(
+                imageVector = Icons.Default.ChatBubble,
+                contentDescription = "Messages",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
@@ -906,7 +847,7 @@ fun EmptyFeed(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Your friends haven’t posted anything.\nBe the first to share a moment!",
+            text = "Your friends haven't posted anything.\nBe the first to share a moment!",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
             textAlign = TextAlign.Center

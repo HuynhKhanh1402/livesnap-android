@@ -67,6 +67,7 @@ fun CaptureScreen(
     friendModalViewModel: FriendModalViewModel,
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
+    onChatBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current

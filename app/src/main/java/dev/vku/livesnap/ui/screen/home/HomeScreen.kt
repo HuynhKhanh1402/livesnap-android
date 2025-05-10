@@ -21,6 +21,7 @@ fun HomeScreen(
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit,
+    onChatClick: () -> Unit
 ) {
     val pagerState = rememberPagerState(
         pageCount = { 2 }
@@ -36,12 +37,14 @@ fun HomeScreen(
                 friendModalViewModel = friendModalViewModel,
                 onProfileBtnClicked = onProfileBtnClicked,
                 snackbarHostState = snackbarHostState,
+                onChatBtnClicked = onChatClick,
                 onImageCaptured = onImageCaptured,
             )
             1 -> FeedScreen(
                 viewModel = feedViewModel,
                 snackbarHostState = snackbarHostState,
-                onProfileBtnClicked = onProfileBtnClicked
+                onProfileBtnClicked = onProfileBtnClicked,
+                onChatClick = onChatClick
             )
         }
     }
