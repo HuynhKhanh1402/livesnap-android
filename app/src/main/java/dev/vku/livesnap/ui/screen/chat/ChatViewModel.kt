@@ -6,7 +6,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
+import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.domain.model.Message
+import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.domain.mapper.toDomain
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -15,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val messageRepository: FirebaseMessageRepository,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val snapRepository: SnapRepository
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
@@ -29,6 +33,9 @@ class ChatViewModel @Inject constructor(
 
     private var currentChatId: String? = null
     private var currentLimit = 20L
+
+    private val _snapMap = MutableStateFlow<Map<String, Snap>>(emptyMap())
+    val snapMap: StateFlow<Map<String, Snap>> = _snapMap.asStateFlow()
 
     fun loadMessages(chatId: String) {
         if (currentChatId == chatId) return
@@ -106,6 +113,22 @@ class ChatViewModel @Inject constructor(
             jsonObject.getString("userId")
         } catch (e: Exception) {
             ""
+        }
+    }
+
+    suspend fun fetchSnapIfNeeded(snapId: String?): Snap? {
+        if (snapId == null) return null
+        val current = _snapMap.value[snapId]
+        if (current != null) return current
+        return try {
+            val response = snapRepository.fetchSnap(snapId)
+            if (response.isSuccessful && response.body()?.data != null) {
+                val snap = response.body()!!.data.toDomain()
+                _snapMap.value = _snapMap.value + (snapId to snap)
+                snap
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 } 

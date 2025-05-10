@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,6 +48,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.vku.livesnap.domain.model.Message
+import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.screen.home.FeedPhoto
+import dev.vku.livesnap.ui.screen.home.FeedPhotoFooter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -141,44 +145,70 @@ fun ChatScreen(
 fun MessageItem(
     message: Message,
     isCurrentUser: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
-    
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
-    ) {
-        Surface(
-            modifier = Modifier
-                .widthIn(max = 340.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                        bottomEnd = if (isCurrentUser) 4.dp else 16.dp
-                    )
-                ),
-            color = if (isCurrentUser) MaterialTheme.colorScheme.primary
-                   else MaterialTheme.colorScheme.secondaryContainer
-        ) {
+    val snapId = message.snapId
+    var snap: Snap? by remember { mutableStateOf(null) }
+    if (snapId != null) {
+        val snapState = produceState<Snap?>(initialValue = viewModel.snapMap.collectAsState().value[snapId], snapId) {
+            value = viewModel.fetchSnapIfNeeded(snapId)
+        }
+        snap = snapState.value
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (snap != null) {
+            // Snap UI
             Column(
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
             ) {
-                Text(
-                    text = message.content,
-                    color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSecondaryContainer
+                FeedPhoto(snap!!.image, snap!!.caption)
+                Spacer(Modifier.height(8.dp))
+                FeedPhotoFooter(
+                    isOwner = snap!!.isOwner,
+                    avatar = snap!!.user.avatar,
+                    name = "${snap!!.user.firstName} ${snap!!.user.lastName}".trim(),
+                    createdAt = snap!!.createdAt
                 )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = formatMessageTime(message.timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                    else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                )
+            }
+        }
+        // Message bubble như cũ
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
+        ) {
+            Surface(
+                modifier = Modifier
+                    .widthIn(max = 340.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (isCurrentUser) 16.dp else 4.dp,
+                            bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                        )
+                    ),
+                color = if (isCurrentUser) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text(
+                        text = message.content,
+                        color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = formatMessageTime(message.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isCurrentUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
