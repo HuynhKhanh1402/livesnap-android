@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -42,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,7 +67,7 @@ import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.domain.model.User
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-object UserProfileDestination: NavigationDestination {
+object UserProfileDestination : NavigationDestination {
     override val route: String = "profile"
 }
 
@@ -83,8 +86,8 @@ fun UserProfileScreen(
     val isLoading by viewModel.loadingState.collectAsState()
 
     var user by remember { mutableStateOf<User?>(null) }
-
     var showAvatarDialog by remember { mutableStateOf(false) }
+    var showEditNameDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -120,8 +123,7 @@ fun UserProfileScreen(
             is LogoutResult.Error -> {
                 snackbarHostState.showSnackbar((logoutResult as LogoutResult.Error).message)
             }
-            else -> {
-            }
+            else -> {}
         }
     }
 
@@ -131,13 +133,11 @@ fun UserProfileScreen(
                 is ProfileUiEvent.PickImageFromGallery -> {
                     galleryLauncher.launch("image/*")
                 }
-
                 is ProfileUiEvent.CaptureImageFromCamera -> {
                     // Sẽ triển khai sau
                 }
-
                 is ProfileUiEvent.ShowSnackbar -> {
-                    // Hiện Snackbar
+                    snackbarHostState.showSnackbar(event.message)
                 }
             }
         }
@@ -150,27 +150,22 @@ fun UserProfileScreen(
             .padding(16.dp)
             .verticalScroll(scrollState),
     ) {
-
         if (user != null) {
             ProfileHeader(
                 user = user!!,
-                onUploadAvatarBtnClicked = {
-                    showAvatarDialog = true
-                }
+                onUploadAvatarBtnClicked = { showAvatarDialog = true },
+                onEditNameClicked = { showEditNameDialog = true }
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             InviteCard(user!!)
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             GeneralSection()
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             PrivacyNSecuritySection()
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
-
         AboutSection()
-
-        Spacer(Modifier.height(36.dp))
-
+        Spacer(modifier = Modifier.height(36.dp))
         LogoutButton {
             viewModel.logout()
         }
@@ -180,6 +175,7 @@ fun UserProfileScreen(
         LoadingOverlay()
     }
 
+    // Modal Bottom Sheet cho chỉnh sửa avatar
     if (showAvatarDialog) {
         ModalBottomSheet(
             onDismissRequest = { showAvatarDialog = false },
@@ -209,22 +205,89 @@ fun UserProfileScreen(
                         .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
                 )
-
-                Text("Capture image from camera", modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        showAvatarDialog = false
-//                        viewModel.captureImageFromCamera()
-                    }
-                    .padding(vertical = 12.dp),
+                Text(
+                    text = "Capture image from camera",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showAvatarDialog = false
+                            // viewModel.captureImageFromCamera()
+                        }
+                        .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
                 )
-
-                Text("Cancel", modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showAvatarDialog = false }
-                    .padding(vertical = 12.dp),
+                Text(
+                    text = "Cancel",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showAvatarDialog = false }
+                        .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+
+    // Modal Bottom Sheet cho chỉnh sửa tên
+    if (showEditNameDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { showEditNameDialog = false },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Edit your name",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                var firstName by remember { mutableStateOf(user?.firstName ?: "") }
+                var lastName by remember { mutableStateOf(user?.lastName ?: "") }
+                TextField(
+                    value = firstName,
+                    onValueChange = { firstName = it },
+                    label = { Text("First Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = lastName,
+                    onValueChange = { lastName = it },
+                    label = { Text("Last Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        if (firstName.isNotBlank() && lastName.isNotBlank()) {
+                            viewModel.updateName(firstName, lastName)
+                            showEditNameDialog = false
+                        } else {
+//                            snackbarHostState.showSnackbar("Vui lòng nhập cả họ và tên!")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Lưu", fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    text = "Hủy",
+                    modifier = Modifier
+                        .clickable { showEditNameDialog = false }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -234,7 +297,8 @@ fun UserProfileScreen(
 @Composable
 fun ProfileHeader(
     user: User,
-    onUploadAvatarBtnClicked: () -> Unit
+    onUploadAvatarBtnClicked: () -> Unit,
+    onEditNameClicked: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -268,13 +332,10 @@ fun ProfileHeader(
                     }
                 }
             }
-
-            AddButton(
-                onClick = onUploadAvatarBtnClicked
-            )
+            AddButton(onClick = onUploadAvatarBtnClicked)
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "${user.lastName} ${user.firstName}".trim(),
@@ -283,12 +344,23 @@ fun ProfileHeader(
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Tag(user.username)
-            Spacer(Modifier.width(8.dp))
-            Tag("Edit profile", bold = true)
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onEditNameClicked,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                Text("Edit profile")
+            }
         }
     }
 }
@@ -351,9 +423,7 @@ fun AddButton(
                 color = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             )
-            .clickable(
-                onClick = onClick
-            ),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -424,8 +494,8 @@ fun InviteCard(user: User) {
                 }
             }
         }
-        
-        Spacer(Modifier.width(12.dp))
+
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "Mời bạn bè tham gia LiveSnap",
@@ -435,7 +505,8 @@ fun InviteCard(user: User) {
             Text(
                 text = "livesnap.app/${user.username}",
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontSize = 13.sp)
+                fontSize = 13.sp
+            )
         }
         Icon(
             imageVector = Icons.Default.Share,
@@ -467,45 +538,25 @@ fun GeneralSection() {
             SectionRow(
                 icon = Icons.Default.Phone,
                 text = "Change phone number",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.Default.Mail,
                 text = "Change email address",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.AutoMirrored.Filled.Send,
                 text = "Send feedback",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.Default.ReportProblem,
                 text = "Report Issue",
-                onClick = {
-                    // TODO:
-                }
+                onClick = { /* TODO */ }
             )
         }
     }
@@ -529,9 +580,8 @@ fun PrivacyNSecuritySection() {
         SectionRow(
             icon = Icons.Default.Visibility,
             text = "Account Visibility",
-            onClick = { TODO() },
-            modifier = Modifier
-                .padding(8.dp)
+            onClick = { /* TODO */ },
+            modifier = Modifier.padding(8.dp)
         )
     }
 }
@@ -558,45 +608,25 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Share,
                 text = "Share LiveSnap",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.Default.Star,
                 text = "Rate LiveSnap",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.Default.Description,
                 text = "Terms and Services",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
-            HorizontalDivider(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-            )
-
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
                 icon = Icons.Default.Lock,
                 text = "Privacy Policy",
-                onClick = {
-                    // TODO:  
-                }
+                onClick = { /* TODO */ }
             )
         }
     }
@@ -617,11 +647,7 @@ fun SectionTitle(icon: ImageVector, text: String) {
             color = MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                .padding(
-                    vertical = 8.dp,
-                    horizontal = 8.dp
-                )
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
         )
     }
 }
@@ -636,9 +662,7 @@ fun SectionRow(
     Row(
         modifier = modifier
             .padding(vertical = 8.dp)
-            .clickable(
-                onClick = onClick
-            ),
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -652,12 +676,9 @@ fun SectionRow(
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.W500,
-            modifier = Modifier
-                .padding(start = 8.dp)
+            modifier = Modifier.padding(start = 8.dp)
         )
-
         Spacer(modifier = Modifier.weight(1f))
-
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,

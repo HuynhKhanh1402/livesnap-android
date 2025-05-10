@@ -5,6 +5,7 @@ import dev.vku.livesnap.data.remote.dto.request.CheckEmailExistRequest
 import dev.vku.livesnap.data.remote.dto.request.CheckUsernameExistRequest
 import dev.vku.livesnap.data.remote.dto.request.LoginRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
@@ -48,7 +49,7 @@ class DefaultUsersRepository(
         firstName: String,
         lastName: String
     ): Response<Unit> {
-        return apiService.updateName(firstName, lastName)
+        return apiService.updateName(UpdateNameRequest(firstName, lastName))
     }
 
 }

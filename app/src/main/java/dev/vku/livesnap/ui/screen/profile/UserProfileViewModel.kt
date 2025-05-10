@@ -112,11 +112,27 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun updateAvatar(uri: Uri) {
-//        viewModelScope.launch {
-//            _loadingState.value = true
-//            try {
-//                userRepository.se
-//            }
-//        }
+        // Implement avatar update logic here
+    }
+
+    fun updateName(firstName: String, lastName: String) {
+        viewModelScope.launch {
+            _loadingState.value = true
+            try {
+                val response = userRepository.updateName(firstName, lastName)
+                if (response.isSuccessful) {
+                    fetchUser() // Làm mới dữ liệu người dùng
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Cập nhật tên thành công"))
+                } else {
+                    _fetchUserResult.value = FetchUserResult.Error("Lỗi API: ${response.code()} - ${response.message()}")
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Cập nhật tên thất bại: ${response.message()}"))
+                }
+            } catch (e: Exception) {
+                _fetchUserResult.value = FetchUserResult.Error("Lỗi: ${e.message}")
+                _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Lỗi: ${e.message}"))
+            } finally {
+                _loadingState.value = false
+            }
+        }
     }
 }

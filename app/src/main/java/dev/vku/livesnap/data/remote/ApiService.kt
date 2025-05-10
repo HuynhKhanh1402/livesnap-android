@@ -4,6 +4,7 @@ import dev.vku.livesnap.data.remote.dto.request.CheckEmailExistRequest
 import dev.vku.livesnap.data.remote.dto.request.CheckUsernameExistRequest
 import dev.vku.livesnap.data.remote.dto.request.LoginRequest
 import dev.vku.livesnap.data.remote.dto.request.ReactSnapRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
@@ -50,8 +51,10 @@ interface ApiService {
         @Part avatar: MultipartBody.Part
     ): Response<Unit>
 
-    @PATCH
-    suspend fun updateName(firstName: String, lastName: String): Response<Unit>
+    @PATCH("users/update-name")
+    suspend fun updateName(
+        @Body request: UpdateNameRequest
+    ): Response<Unit>
 
     @GET("snaps/test")
     suspend fun fetchSnaps(
