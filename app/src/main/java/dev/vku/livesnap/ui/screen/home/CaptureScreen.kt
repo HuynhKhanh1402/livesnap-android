@@ -184,6 +184,9 @@ fun CaptureScreen(
             onDismiss = {
                 showFriendSheet = false
                 friendModalViewModel.resetViewModel()
+            },
+            onFriendListChanged = {
+                viewModel.fetchFriendCount()
             }
         )
     }

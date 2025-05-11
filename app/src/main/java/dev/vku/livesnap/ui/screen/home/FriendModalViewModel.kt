@@ -100,7 +100,7 @@ class FriendModalViewModel @Inject constructor(
                             val users = response.body()?.data?.toDomain() ?: emptyList()
                             _searchUsersResult.value = LoadingResult.Success(users)
                         } else {
-                            _searchUsersResult.value = LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
+                            _searchUsersResult.value = LoadingResult.Error("Error: ${response.body()?.message ?: "Unknown error"}")
                         }
                     } catch (e: Exception) {
                         Log.e("FriendModalViewModel", "An error occurred while searching users: ${e.message}", e)
@@ -133,6 +133,7 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetSendFriendRequestResult() {
         _sendFriendRequestResult.value = LoadingResult.Idle
+        fetchSentFriendRequestList()
     }
 
     fun fetchIncomingRequestList() {
@@ -148,7 +149,7 @@ class FriendModalViewModel @Inject constructor(
                         LoadingResult.Success(incomingRequestList)
                 } else {
                     _fetchIncomingRequestListResult.value =
-                        LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
+                        LoadingResult.Error("Error: ${response.body()?.message ?: "Unknown error"}")
                 }
             } catch (e: Exception) {
                 Log.e("FriendModalViewModel", "An error occurred while fetching incoming requests: ${e.message}", e)
@@ -170,7 +171,11 @@ class FriendModalViewModel @Inject constructor(
                     _acceptFriendRequestResult.value = LoadingResult.Success(Unit)
                 } else {
                     _acceptFriendRequestResult.value =
-                        LoadingResult.Error(response.message() ?: "Unknown error")
+                        LoadingResult.Error(response.body()?.message ?: "Unknown error")
+                    Log.e(
+                        "FriendModalViewModel",
+                        "Error accepting friend request: ${response.body()?.message}"
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("FriendModalViewModel", "An error occurred while accepting friend request: ${e.message}", e)
@@ -181,6 +186,8 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetAcceptFriendRequestResult() {
         _acceptFriendRequestResult.value = LoadingResult.Idle
+        fetchIncomingRequestList()
+        fetchFriendList()
     }
 
     fun rejectFriendRequest(requestId: String) {
@@ -213,6 +220,7 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetRejectFriendRequestResult() {
         _rejectFriendRequestResult.value = LoadingResult.Idle
+        fetchIncomingRequestList()
     }
 
     fun fetchFriendList() {
@@ -258,6 +266,7 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetRemoveFriendResult() {
         _removeFriendResult.value = LoadingResult.Idle
+        fetchFriendList()
     }
 
     fun fetchSentFriendRequestList() {
@@ -283,12 +292,12 @@ class FriendModalViewModel @Inject constructor(
         }
     }
 
-    fun cancelFriendRequest(requestId: String) {
+    fun cancelFriendRequest(userId: String) {
         viewModelScope.launch {
-            cancellingRequestId = requestId
+            cancellingRequestId = userId
             _cancelFriendRequestResult.value = LoadingResult.Loading
             try {
-                val response = friendRepository.cancelFriendRequest(requestId)
+                val response = friendRepository.cancelFriendRequest(userId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _cancelFriendRequestResult.value = LoadingResult.Success(Unit)
                 } else {
@@ -303,5 +312,6 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetCancelFriendRequestResult() {
         _cancelFriendRequestResult.value = LoadingResult.Idle
+        fetchSentFriendRequestList()
     }
 }

@@ -119,7 +119,7 @@ class CaptureViewModel @Inject constructor(
                     Log.d("CaptureViewModel", "$count")
                 } else {
                     _fetchFriendCountResult.value =
-                        LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
+                        LoadingResult.Error("Error: ${response.body()?.message ?: "Unknown error"}")
                 }
             } catch (e: Exception) {
                 Log.e("CaptureViewModel", "An error occurred while fetching friend count: ${e.message}", e)

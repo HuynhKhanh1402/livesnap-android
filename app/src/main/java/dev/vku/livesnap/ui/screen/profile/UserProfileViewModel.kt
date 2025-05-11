@@ -1,5 +1,7 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,15 +15,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import android.content.Context
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.InputStream
 import java.io.ByteArrayOutputStream
-import android.graphics.BitmapFactory
-import android.graphics.Bitmap
+import java.io.InputStream
+import javax.inject.Inject
 
 sealed class FetchUserResult {
     data class Success(val user: User) : FetchUserResult()
@@ -95,7 +94,7 @@ class UserProfileViewModel @Inject constructor(
                     }
                 } else {
                     _fetchUserResult.value =
-                        FetchUserResult.Error("ERROR: ${response.message() ?: "Unknown error"}")
+                        FetchUserResult.Error("ERROR: ${response.body()?.message ?: "Unknown error"}")
                 }
             } catch (e: Exception) {
                 _fetchUserResult.value = FetchUserResult.Error("Error fetching user detail: ${e.message}")

@@ -148,8 +148,8 @@ class UploadSnapViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     _uploadSnapResult.value = UploadSnapResult.Success
                 } else {
-                    _uploadSnapResult.value = UploadSnapResult.Error(response.message() ?: "Unknown error")
-                    Log.e("UploadSnapViewModel", "Error uploading snap: ${response.message()}")
+                    _uploadSnapResult.value = UploadSnapResult.Error(response.body()?.message ?: "Unknown error")
+                    Log.e("UploadSnapViewModel", "Error uploading snap: ${response.body()?.message}")
                 }
             } catch (e: Exception) {
                 Log.e("UploadSnapViewModel", "Error uploading snap: ${e.message}", e)

@@ -74,8 +74,8 @@ class FeedViewModel @Inject constructor(
                         _loadSnapResult.value = LoadSnapResult.Success
                     }
                 } else {
-                    _loadSnapResult.value = LoadSnapResult.Error(response.message() ?: "Unknown error")
-                    Log.e("FeedViewModel", "Failed to load snaps: ${response.message()}")
+                    _loadSnapResult.value = LoadSnapResult.Error(response.body()?.message ?: "Unknown error")
+                    Log.e("FeedViewModel", "Failed to load snaps: ${response.body()?.message}")
                 }
             } catch (e: Exception) {
                 Log.e("FeedViewMode", "Exception occurred: ${e.message}", e)
@@ -124,7 +124,7 @@ class FeedViewModel @Inject constructor(
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _reactSnapResult.value = LoadingResult.Success(emoji)
                 } else {
-                    _reactSnapResult.value = LoadingResult.Error(response.message() ?: "Unknown error")
+                    _reactSnapResult.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
                 Log.e("FeedViewModel", "Exception occurred: ${e.message}", e)
@@ -164,7 +164,7 @@ class FeedViewModel @Inject constructor(
 
                     Log.d("FeedViewModel", "Updated snap: $snap")
                 } else {
-                    Log.e("FeedViewModel", "Failed to fetch snap detail: ${response.message()}")
+                    Log.e("FeedViewModel", "Failed to fetch snap detail: ${response.body()?.message}")
                 }
             } catch (e: Exception) {
                 Log.e("FeedViewModel", "Exception occurred while fetching snap detail: ${e.message}", e)
