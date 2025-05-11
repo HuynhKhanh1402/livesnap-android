@@ -1,5 +1,6 @@
 package dev.vku.livesnap.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import dev.vku.livesnap.data.local.TokenManager
@@ -10,10 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
-import javax.inject.Inject
-import android.util.Log
 
-class FirebaseMessageRepository @Inject constructor(
+class FirebaseMessageRepository(
     firestore: FirebaseFirestore,
     private val tokenManager: TokenManager
 ) {
