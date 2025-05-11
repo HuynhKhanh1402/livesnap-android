@@ -46,7 +46,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://api.livesnap.khanhhuynh.io.vn/api/")
+            .baseUrl("http://api.livesnap.khanhhuynh.io.vn/v1/")
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
