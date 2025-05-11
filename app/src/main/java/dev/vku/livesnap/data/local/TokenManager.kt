@@ -14,7 +14,7 @@ private val Context.dataStore by preferencesDataStore("auth_prefs")
 
 @Singleton
 class TokenManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext internal val context: Context
 ) {
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("auth_token")

@@ -14,6 +14,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.content.Context
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.InputStream
+import java.io.ByteArrayOutputStream
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 
 sealed class FetchUserResult {
     data class Success(val user: User) : FetchUserResult()
@@ -123,7 +131,39 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun updateAvatar(uri: Uri) {
-        // Implement avatar update logic here
+        viewModelScope.launch {
+            _loadingState.value = true
+            try {
+                val context = tokenManager.context // Giả sử TokenManager có context, nếu không hãy truyền context vào ViewModel
+                val contentResolver = context.contentResolver
+                val inputStream: InputStream? = contentResolver.openInputStream(uri)
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+
+                // Nén ảnh xuống 80% chất lượng
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                originalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
+                val compressedBytes = byteArrayOutputStream.toByteArray()
+
+                val fileName = "avatar_${System.currentTimeMillis()}.jpg"
+                val requestFile = compressedBytes.toRequestBody("image/*".toMediaTypeOrNull())
+                val imagePart = MultipartBody.Part.createFormData("avatar", fileName, requestFile)
+
+                val response = (userRepository as? dev.vku.livesnap.data.repository.DefaultUsersRepository)?.let {
+                    it.apiService.setAvatar(imagePart)
+                }
+                if (response != null && response.isSuccessful) {
+                    fetchUser()
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Cập nhật avatar thành công!"))
+                } else {
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Cập nhật avatar thất bại!"))
+                }
+            } catch (e: Exception) {
+                _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Lỗi cập nhật avatar: ${e.message}"))
+            } finally {
+                _loadingState.value = false
+            }
+        }
     }
 
     fun updateName(firstName: String, lastName: String) {
