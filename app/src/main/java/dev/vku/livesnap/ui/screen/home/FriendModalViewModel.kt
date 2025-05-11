@@ -78,6 +78,9 @@ class FriendModalViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+        if (query.isBlank()) {
+            _searchUsersResult.value = LoadingResult.Idle
+        }
     }
 
     fun resetViewModel() {
