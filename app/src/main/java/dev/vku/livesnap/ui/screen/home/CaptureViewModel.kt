@@ -41,7 +41,9 @@ class CaptureViewModel @Inject constructor(
         ProcessCameraProvider.getInstance(context)
 
     val preview = androidx.camera.core.Preview.Builder().build()
-    val imageCapture = ImageCapture.Builder().build()
+    val imageCapture = ImageCapture.Builder()
+        .setFlashMode(ImageCapture.FLASH_MODE_OFF)
+        .build()
 
     private val _capturedImageUri = MutableStateFlow<Uri?>(null)
     val capturedImageUri: StateFlow<Uri?> = _capturedImageUri
@@ -64,6 +66,11 @@ class CaptureViewModel @Inject constructor(
 
     fun toggleFlash() {
         _isFlashOn.value = !_isFlashOn.value
+        imageCapture.flashMode = if (_isFlashOn.value) {
+            ImageCapture.FLASH_MODE_ON
+        } else {
+            ImageCapture.FLASH_MODE_OFF
+        }
     }
 
     fun flipCamera() {
