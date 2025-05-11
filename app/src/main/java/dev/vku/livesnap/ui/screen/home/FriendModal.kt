@@ -677,21 +677,21 @@ fun InComingFriendRequest(
                             }
                         },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         if (isRejecting && rejectingRequestId == request.id) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onError
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Reject request",
-                                tint = MaterialTheme.colorScheme.onError,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -941,22 +941,22 @@ fun RemoveFriendButton(
                 }
             },
             modifier = Modifier
-                .size(36.dp)
+                .size(32.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.error)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             if (isRemoving && removedFriendId == friend.id) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onError
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Remove friend",
-                    tint = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -1117,22 +1117,22 @@ fun SentFriendRequest(
                             }
                         },
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         if (isCancelling && cancellingRequestId == request.id) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onError
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Cancel request",
-                                tint = MaterialTheme.colorScheme.onError,
-                                modifier = Modifier.size(18.dp)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
