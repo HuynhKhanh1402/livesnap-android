@@ -51,6 +51,9 @@ class CaptureViewModel @Inject constructor(
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
 
+    private val _friendCount = MutableStateFlow(0)
+    val friendCount: StateFlow<Int> = _friendCount
+
     var isFirstLoad = true
         private set
 
@@ -110,9 +113,10 @@ class CaptureViewModel @Inject constructor(
             try {
                 val response = friendRepository.fetchFriendList()
                 if (response.isSuccessful && response.body()?.code == 200) {
-                    val friendCount = response.body()?.data?.size ?: 0
-                    _fetchFriendCountResult.value = LoadingResult.Success(friendCount)
-                    Log.d("CaptureViewModel", "$friendCount")
+                    val count = response.body()?.data?.size ?: 0
+                    _friendCount.value = count
+                    _fetchFriendCountResult.value = LoadingResult.Success(count)
+                    Log.d("CaptureViewModel", "$count")
                 } else {
                     _fetchFriendCountResult.value =
                         LoadingResult.Error("Error: ${response.message() ?: "Unknown error"}")
