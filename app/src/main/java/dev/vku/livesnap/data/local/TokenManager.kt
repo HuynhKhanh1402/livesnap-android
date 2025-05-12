@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Base64
+import org.json.JSONObject
 
 private val Context.dataStore by preferencesDataStore("auth_prefs")
 
@@ -35,6 +37,23 @@ class TokenManager @Inject constructor(
     suspend fun clearToken() {
         context.dataStore.edit {
             it.remove(TOKEN_KEY)
+        }
+    }
+
+    suspend fun getCurrentUserId(): String? {
+        val token = getToken() ?: return null
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return null
+            
+            val payload = parts[1]
+            val decodedPayload = Base64.decode(payload, Base64.URL_SAFE)
+            val jsonString = String(decodedPayload)
+            val jsonObject = JSONObject(jsonString)
+            
+            jsonObject.getString("userId")
+        } catch (e: Exception) {
+            null
         }
     }
 }

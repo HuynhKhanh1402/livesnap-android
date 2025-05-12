@@ -1,7 +1,5 @@
 package dev.vku.livesnap.ui.screen.profile
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,12 +13,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import android.content.Context
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import javax.inject.Inject
+import java.io.ByteArrayOutputStream
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import dev.vku.livesnap.data.repository.AuthRepository
 
 sealed class FetchUserResult {
     data class Success(val user: User) : FetchUserResult()
@@ -32,6 +34,13 @@ sealed class LogoutResult {
     data object Success : LogoutResult()
     data class Error(val message: String) : LogoutResult()
     data object Idle : LogoutResult()
+}
+
+sealed class LogoutUiState {
+    data object Initial : LogoutUiState()
+    data object Loading : LogoutUiState()
+    data object Success : LogoutUiState()
+    data class Error(val message: String) : LogoutUiState()
 }
 
 sealed class UploadAvatarResult {
@@ -57,7 +66,8 @@ sealed class ChangeEmailUiState {
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
-    val userRepository: UsersRepository
+    val userRepository: UsersRepository,
+    val authRepository: AuthRepository
 ) : ViewModel() {
     var isFirstLoad = true
 
@@ -66,6 +76,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _logoutResult = MutableStateFlow<LogoutResult>(LogoutResult.Idle)
     val logoutResult: StateFlow<LogoutResult> = _logoutResult
+
+    private val _logoutUiState = MutableStateFlow<LogoutUiState>(LogoutUiState.Initial)
+    val logoutUiState: StateFlow<LogoutUiState> = _logoutUiState
 
     private val _uploadAvatarResult = MutableStateFlow<UploadAvatarResult>(UploadAvatarResult.Idle)
     val uploadAvatarResult: StateFlow<UploadAvatarResult> = _uploadAvatarResult
@@ -94,7 +107,7 @@ class UserProfileViewModel @Inject constructor(
                     }
                 } else {
                     _fetchUserResult.value =
-                        FetchUserResult.Error("ERROR: ${response.body()?.message ?: "Unknown error"}")
+                        FetchUserResult.Error("ERROR: ${response.message() ?: "Unknown error"}")
                 }
             } catch (e: Exception) {
                 _fetchUserResult.value = FetchUserResult.Error("Error fetching user detail: ${e.message}")
@@ -111,16 +124,27 @@ class UserProfileViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
-            _loadingState.value = true
+            _logoutUiState.value = LogoutUiState.Loading
             try {
-                tokenManager.clearToken()
-                _logoutResult.value = LogoutResult.Success
+                val response = authRepository.logout()
+                if (response.isSuccessful) {
+                    tokenManager.clearToken()
+                    _logoutUiState.value = LogoutUiState.Success
+                    _logoutResult.value = LogoutResult.Success
+                } else {
+                    _logoutUiState.value = LogoutUiState.Error("Error logging out: ${response.message()}")
+                    _logoutResult.value = LogoutResult.Error("Error logging out: ${response.message()}")
+                }
             } catch (e: Exception) {
+                _logoutUiState.value = LogoutUiState.Error("Error logging out: ${e.message}")
                 _logoutResult.value = LogoutResult.Error("Error logging out: ${e.message}")
-            } finally {
-                _loadingState.value = false
             }
         }
+    }
+
+    fun resetLogoutState() {
+        _logoutUiState.value = LogoutUiState.Initial
+        _logoutResult.value = LogoutResult.Idle
     }
 
     fun pickImageFromGallery() {

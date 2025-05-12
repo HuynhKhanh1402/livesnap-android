@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.local.TokenManager
+import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ sealed class LoginResult {
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val usersRepository: UsersRepository,
+    private val authRepository: AuthRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
     var email by mutableStateOf("")
@@ -100,16 +102,14 @@ class LoginViewModel @Inject constructor(
             _loginResult.value = LoginResult.Idle
             isLoading = true
             try {
-                val response = usersRepository.login(email, password)
-                if (response.code == 200) {
+                val response = authRepository.login(email, password)
+                if (response.isSuccessful && response.body()?.code == 200) {
                     _loginResult.value = LoginResult.Success
-                    tokenManager.saveToken(response.data.token)
                 } else {
-                    _loginResult.value = LoginResult.Error(response.message)
+                    _loginResult.value = LoginResult.Error(response.body()?.message ?: "Login failed")
                 }
             } catch (e: Exception) {
-                _loginResult.value =
-                    LoginResult.Error(e.message ?: "Unknown error")
+                _loginResult.value = LoginResult.Error(e.message ?: "Unknown error")
                 Log.e("LoginViewModel", "Login failed: ${e.message}", e)
             } finally {
                 isLoading = false

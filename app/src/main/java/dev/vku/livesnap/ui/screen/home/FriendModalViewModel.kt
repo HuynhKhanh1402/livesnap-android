@@ -233,7 +233,7 @@ class FriendModalViewModel @Inject constructor(
             try {
                 val response = friendRepository.fetchFriendList()
                 if (response.isSuccessful && response.body()?.code == 200) {
-                    val friendList = response.body()?.data?.toDomain() ?: emptyList()
+                    val friendList = response.body()?.data?.friends?.toDomain() ?: emptyList()
                     _fetchFriendListResult.value = LoadingResult.Success(friendList)
                 } else {
                     _fetchFriendListResult.value =

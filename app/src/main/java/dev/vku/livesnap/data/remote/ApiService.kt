@@ -35,7 +35,7 @@ import retrofit2.http.Query
 
 interface ApiService {
     @POST("auth/register")
-    suspend fun registerUser(@Body user: UserRegistrationRequest): UserRegistrationResponse
+    suspend fun registerUser(@Body user: UserRegistrationRequest): Response<UserRegistrationResponse>
 
     @POST("users/check-email-exist")
     suspend fun checkEmailExist(@Body request: CheckEmailExistRequest): CheckEmailExistResponse
@@ -44,7 +44,7 @@ interface ApiService {
     suspend fun checkUsernameExist(@Body request: CheckUsernameExistRequest): CheckUsernameExistResponse
 
     @POST("auth/login")
-    suspend fun login(@Body request: LoginRequest): LoginResponse
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     @GET("users/detail")
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
@@ -120,4 +120,7 @@ interface ApiService {
 
     @PATCH("users/update-email")
     suspend fun updateEmail(@Body request: UpdateEmailRequest): Response<DefaultResponse>
+
+    @POST("auth/logout")
+    suspend fun logout(): Response<Unit>
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,8 @@ sealed class LoginResult {
 
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
-    private val usersRepository: UsersRepository
+    private val usersRepository: UsersRepository,
+    private val authRepository: AuthRepository
 ): ViewModel() {
     var email by mutableStateOf("")
 
@@ -165,11 +167,11 @@ class RegistrationViewModel @Inject constructor(
                     password = password,
                     username = username
                 )
-                val response = usersRepository.registerUser(userRegistration)
-                if (response.code == 200) {
+                val response = authRepository.registerUser(userRegistration)
+                if (response.isSuccessful && response.body()?.code == 200) {
                     _registrationResult.value = RegistrationResult.Success
                 } else {
-                    _registrationResult.value = RegistrationResult.Error(response.message)
+                    _registrationResult.value = RegistrationResult.Error(response.body()?.message ?: "Registration failed")
                 }
             } catch (e: Exception) {
                 _registrationResult.value = RegistrationResult.Error(e.message ?: "Unknown error")
@@ -190,14 +192,14 @@ class RegistrationViewModel @Inject constructor(
             isLoading = true
 
             try {
-                val response = usersRepository.login(email, password)
-                if (response.code == 200) {
+                val response = authRepository.login(email, password)
+                if (response.isSuccessful && response.body()?.code == 200) {
                     _loginResult.value = LoginResult.Success
                 } else {
-                    _registrationResult.value = RegistrationResult.Error(response.message)
+                    _loginResult.value = LoginResult.Error(response.body()?.message ?: "Login failed")
                 }
             } catch (e: Exception) {
-                _registrationResult.value = RegistrationResult.Error(e.message ?: "Unknown error")
+                _loginResult.value = LoginResult.Error(e.message ?: "Unknown error")
                 Log.e("RegistrationViewModel", "Login failed: ${e.message}", e)
             } finally {
                 isLoading = false

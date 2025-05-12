@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,12 +89,14 @@ fun UserProfileScreen(
 
     val fetchUserResult by viewModel.fetchUserResult.collectAsState()
     val logoutResult by viewModel.logoutResult.collectAsState()
+    val logoutUiState by viewModel.logoutUiState.collectAsState()
     val isLoading by viewModel.loadingState.collectAsState()
 
     var user by remember { mutableStateOf<User?>(null) }
     var showAvatarDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showChangeEmailDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var showPasswordError by remember { mutableStateOf(false) }
@@ -132,6 +136,19 @@ fun UserProfileScreen(
             }
             is LogoutResult.Error -> {
                 snackbarHostState.showSnackbar((logoutResult as LogoutResult.Error).message)
+                viewModel.resetLogoutState()
+            }
+            else -> {}
+        }
+    }
+
+    LaunchedEffect(logoutUiState) {
+        when (logoutUiState) {
+            is LogoutUiState.Success -> {
+                showLogoutDialog = false
+            }
+            is LogoutUiState.Error -> {
+                showLogoutDialog = false
             }
             else -> {}
         }
@@ -179,7 +196,7 @@ fun UserProfileScreen(
         AboutSection()
         Spacer(modifier = Modifier.height(36.dp))
         LogoutButton {
-            viewModel.logout()
+            showLogoutDialog = true
         }
     }
 
@@ -432,6 +449,61 @@ fun UserProfileScreen(
                 )
             }
         }
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (logoutUiState !is LogoutUiState.Loading) {
+                    showLogoutDialog = false
+                    viewModel.resetLogoutState()
+                }
+            },
+            title = {
+                Text(
+                    text = "Logout",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to logout?",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.logout() },
+                    enabled = logoutUiState !is LogoutUiState.Loading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    if (logoutUiState is LogoutUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Logout")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        viewModel.resetLogoutState()
+                    },
+                    enabled = logoutUiState !is LogoutUiState.Loading
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
