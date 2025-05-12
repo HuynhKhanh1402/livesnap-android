@@ -1,10 +1,13 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.local.TokenManager
+import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.model.User
@@ -13,16 +16,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import android.content.Context
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.InputStream
 import java.io.ByteArrayOutputStream
-import android.graphics.BitmapFactory
-import android.graphics.Bitmap
-import dev.vku.livesnap.data.repository.AuthRepository
+import java.io.InputStream
+import javax.inject.Inject
 
 sealed class FetchUserResult {
     data class Success(val user: User) : FetchUserResult()
@@ -138,6 +137,7 @@ class UserProfileViewModel @Inject constructor(
             } catch (e: Exception) {
                 _logoutUiState.value = LogoutUiState.Error("Error logging out: ${e.message}")
                 _logoutResult.value = LogoutResult.Error("Error logging out: ${e.message}")
+                tokenManager.clearToken()
             }
         }
     }
@@ -172,9 +172,7 @@ class UserProfileViewModel @Inject constructor(
                 val requestFile = compressedBytes.toRequestBody("image/*".toMediaTypeOrNull())
                 val imagePart = MultipartBody.Part.createFormData("avatar", fileName, requestFile)
 
-                val response = (userRepository as? dev.vku.livesnap.data.repository.DefaultUsersRepository)?.let {
-                    it.apiService.setAvatar(imagePart)
-                }
+                val response = (userRepository as? dev.vku.livesnap.data.repository.DefaultUsersRepository)?.apiService?.setAvatar(imagePart)
                 if (response != null && response.isSuccessful) {
                     fetchUser()
                     _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Cập nhật avatar thành công!"))

@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.vku.livesnap.data.repository.FCMRepository
 import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
@@ -26,7 +25,6 @@ import javax.inject.Inject
 class FriendModalViewModel @Inject constructor(
     val userRepository: UsersRepository,
     val friendRepository: FriendRepository,
-    private val fcmRepository: FCMRepository
 ) : ViewModel() {
     var isFirstLoad = true
         private set
@@ -124,16 +122,6 @@ class FriendModalViewModel @Inject constructor(
                 val response = friendRepository.sendFriendRequest(userId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _sendFriendRequestResult.value = LoadingResult.Success(Unit)
-
-                    // Get user info to send notification
-                    val userResponse = userRepository.getUserById(userId)
-                    if (userResponse.isSuccessful && userResponse.body()?.data != null) {
-                        val user = userResponse.body()!!.data.user.toDomain()
-                        fcmRepository.sendFriendRequestNotification(
-                            receiverId = userId,
-                            senderName = "${user.lastName} ${user.firstName}"
-                        )
-                    }
                 } else {
                     _sendFriendRequestResult.value =
                         LoadingResult.Error(response.body()?.message ?: "Unknown error")
@@ -183,18 +171,6 @@ class FriendModalViewModel @Inject constructor(
                 val response = friendRepository.acceptFriendRequest(requestId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _acceptFriendRequestResult.value = LoadingResult.Success(Unit)
-                    
-                    // Get the request details to send notification
-                    val incomingRequests = friendRepository.fetchIncomingRequestList()
-                    if (incomingRequests.isSuccessful && incomingRequests.body()?.data != null) {
-                        val request = incomingRequests.body()!!.data.requests.find { it.id == requestId }
-                        if (request != null) {
-                            fcmRepository.sendFriendRequestAcceptedNotification(
-                                receiverId = request.user.id,
-                                accepterName = "${request.user.lastName} ${request.user.firstName}"
-                            )
-                        }
-                    }
                 } else {
                     _acceptFriendRequestResult.value =
                         LoadingResult.Error(response.body()?.message ?: "Unknown error")
