@@ -6,8 +6,10 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+import kotlinx.coroutines.launch
 
 object HomeDestination : NavigationDestination {
     override val route = "home"
@@ -26,6 +28,7 @@ fun HomeScreen(
     val pagerState = rememberPagerState(
         pageCount = { 2 }
     )
+    val coroutineScope = rememberCoroutineScope()
 
     VerticalPager(
         state = pagerState,
@@ -44,7 +47,12 @@ fun HomeScreen(
                 viewModel = feedViewModel,
                 snackbarHostState = snackbarHostState,
                 onProfileBtnClicked = onProfileBtnClicked,
-                onChatClick = onChatClick
+                onChatClick = onChatClick,
+                onNavigateToHome = {
+                    coroutineScope.launch {
+                        pagerState.scrollToPage(0)
+                    }
+                }
             )
         }
     }

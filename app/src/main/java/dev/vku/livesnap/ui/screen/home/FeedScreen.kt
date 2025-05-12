@@ -100,7 +100,8 @@ fun FeedScreen(
     viewModel: FeedViewModel,
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
-    onChatClick: () -> Unit = {}
+    onChatClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
     val reactSnapResult by viewModel.reactSnapResult.collectAsState()
@@ -205,7 +206,8 @@ fun FeedScreen(
                 },
                 onSendMessage = {message ->
                     viewModel.sendMessage(snap, message)
-                }
+                },
+                onNavigateToHome = onNavigateToHome
             )
         }
 
@@ -259,7 +261,8 @@ fun Feed(
     onChatBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
     onReact: (String) -> Unit,
-    onSendMessage: (String) -> Unit
+    onSendMessage: (String) -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
@@ -329,7 +332,8 @@ fun Feed(
             Spacer(modifier = Modifier.height(16.dp))
 
             ActionBar(
-                onMoreOptionsBtnClicked = { showDialog.value = true }
+                onMoreOptionsBtnClicked = { showDialog.value = true },
+                onNavigateToHome = onNavigateToHome
             )
         }
     }
@@ -897,7 +901,8 @@ fun ActivityBar(
 
 @Composable
 fun ActionBar(
-    onMoreOptionsBtnClicked: () -> Unit
+    onMoreOptionsBtnClicked: () -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -928,7 +933,8 @@ fun ActionBar(
             modifier = Modifier
                 .size(60.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable { onNavigateToHome() },
             contentAlignment = Alignment.Center
         ) {
             Box(
