@@ -92,7 +92,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFCMRepository(): FCMRepository {
-        return DefaultFCMRepository(FirebaseFirestore.getInstance())
+        return DefaultFCMRepository()
     }
 
     @Provides
