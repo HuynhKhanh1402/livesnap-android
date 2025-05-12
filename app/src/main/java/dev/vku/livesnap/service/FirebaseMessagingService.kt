@@ -3,12 +3,12 @@ package dev.vku.livesnap.service
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dev.vku.livesnap.MainActivity
@@ -23,6 +23,39 @@ class LiveSnapFirebaseMessagingService : FirebaseMessagingService() {
     private val firestore = FirebaseFirestore.getInstance()
     private val tokenManager = TokenManager(this)
 
+    init {
+        Log.d("FirebaseMessagingService", "Service initialized")
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d("FirebaseMessagingService", "Service onCreate called")
+        
+        // Check if FCM is auto-initialized
+        val isAutoInitEnabled = FirebaseMessaging.getInstance().isAutoInitEnabled
+        Log.d("FirebaseMessagingService", "FCM Auto-initialization: $isAutoInitEnabled")
+        
+        // Check current FCM token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FirebaseMessagingService", "Current FCM token: $token")
+            } else {
+                Log.e("FirebaseMessagingService", "Failed to get FCM token", task.exception)
+            }
+        }
+
+        // Subscribe to a topic to test FCM
+        FirebaseMessaging.getInstance().subscribeToTopic("test")
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("FirebaseMessagingService", "Subscribed to test topic")
+                } else {
+                    Log.e("FirebaseMessagingService", "Failed to subscribe to test topic", task.exception)
+                }
+            }
+    }
+
     override fun onNewToken(token: String) {
         Log.d("FirebaseMessagingService", "New FCM token: $token")
         super.onNewToken(token)
@@ -31,11 +64,15 @@ class LiveSnapFirebaseMessagingService : FirebaseMessagingService() {
             try {
                 val userId = getCurrentUserId()
                 if (userId != null) {
+                    Log.d("FirebaseMessagingService", "Saving FCM token for user: $userId")
                     // Create or update the document
                     firestore.collection("users")
                         .document(userId)
                         .set(mapOf("fcmToken" to token), com.google.firebase.firestore.SetOptions.merge())
                         .await()
+                    Log.d("FirebaseMessagingService", "FCM token saved successfully")
+                } else {
+                    Log.d("FirebaseMessagingService", "No user ID found, skipping token save")
                 }
             } catch (e: Exception) {
                 Log.e("FirebaseMessagingService", "Error saving FCM token: ${e.message}", e)
@@ -44,8 +81,13 @@ class LiveSnapFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        Log.d("FirebaseMessagingService", "onMessageReceived called")
         super.onMessageReceived(message)
-        
+
+        Log.d("FirebaseMessagingService", "Message received: $message")
+        Log.d("FirebaseMessagingService", "Message notification received: ${message.notification}")
+        Log.d("FirebaseMessagingService", "Message data received: ${message.data}")
+
         val notification = message.notification
         val data = message.data
 

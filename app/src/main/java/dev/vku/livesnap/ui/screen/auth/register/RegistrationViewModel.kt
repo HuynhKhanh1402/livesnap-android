@@ -196,7 +196,8 @@ class RegistrationViewModel @Inject constructor(
             try {
                 val response = authRepository.login(email, password)
                 if (response.isSuccessful && response.body()?.code == 200) {
-                    fcmRepository.refreshFCMToken()
+                    val fcmToken = fcmRepository.refreshFCMToken()
+                    usersRepository.updateFcmToken(fcmToken)
                     _loginResult.value = LoginResult.Success
                 } else {
                     _loginResult.value = LoginResult.Error(response.body()?.message ?: "Login failed")
