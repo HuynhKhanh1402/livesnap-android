@@ -84,7 +84,6 @@ fun UserProfileScreen(
     snackbarHostState: SnackbarHostState,
     onLoggedOut: () -> Unit
 ) {
-    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
     val fetchUserResult by viewModel.fetchUserResult.collectAsState()
@@ -131,7 +130,7 @@ fun UserProfileScreen(
         when (logoutResult) {
             is LogoutResult.Success -> {
                 snackbarHostState.showSnackbar("Logout successful!")
-                kotlinx.coroutines.delay(1000)
+                viewModel.resetLogoutState()
                 onLoggedOut()
             }
             is LogoutResult.Error -> {

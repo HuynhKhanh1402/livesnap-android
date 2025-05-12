@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.repository.AuthRepository
+import dev.vku.livesnap.data.repository.FCMRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +38,8 @@ sealed class LoginResult {
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
     private val usersRepository: UsersRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val fcmRepository: FCMRepository
 ): ViewModel() {
     var email by mutableStateOf("")
 
@@ -194,6 +196,7 @@ class RegistrationViewModel @Inject constructor(
             try {
                 val response = authRepository.login(email, password)
                 if (response.isSuccessful && response.body()?.code == 200) {
+                    fcmRepository.refreshFCMToken()
                     _loginResult.value = LoginResult.Success
                 } else {
                     _loginResult.value = LoginResult.Error(response.body()?.message ?: "Login failed")

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.vku.livesnap.data.repository.FCMRepository
 import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
@@ -24,7 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class FriendModalViewModel @Inject constructor(
     val userRepository: UsersRepository,
-    val friendRepository: FriendRepository
+    val friendRepository: FriendRepository,
+    private val fcmRepository: FCMRepository
 ) : ViewModel() {
     var isFirstLoad = true
         private set
@@ -118,18 +120,27 @@ class FriendModalViewModel @Inject constructor(
         viewModelScope.launch {
             requestedUserId = userId
             _sendFriendRequestResult.value = LoadingResult.Loading
-
             try {
                 val response = friendRepository.sendFriendRequest(userId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _sendFriendRequestResult.value = LoadingResult.Success(Unit)
+
+                    // Get user info to send notification
+                    val userResponse = userRepository.getUserById(userId)
+                    if (userResponse.isSuccessful && userResponse.body()?.data != null) {
+                        val user = userResponse.body()!!.data.user.toDomain()
+                        fcmRepository.sendFriendRequestNotification(
+                            receiverId = userId,
+                            senderName = "${user.lastName} ${user.firstName}"
+                        )
+                    }
                 } else {
                     _sendFriendRequestResult.value =
                         LoadingResult.Error(response.body()?.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
-                Log.e("FriendModalViewModel", "An error occurred while sending friend request: ${e.message}", e)
-                _sendFriendRequestResult.value = LoadingResult.Error("An error occurred while sending friend request: ${e.message}")
+                Log.e("FriendModalViewModel", "Error sending friend request: ${e.message}", e)
+                _sendFriendRequestResult.value = LoadingResult.Error("Error sending friend request: ${e.message}")
             }
         }
     }
@@ -172,17 +183,25 @@ class FriendModalViewModel @Inject constructor(
                 val response = friendRepository.acceptFriendRequest(requestId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _acceptFriendRequestResult.value = LoadingResult.Success(Unit)
+                    
+                    // Get the request details to send notification
+                    val incomingRequests = friendRepository.fetchIncomingRequestList()
+                    if (incomingRequests.isSuccessful && incomingRequests.body()?.data != null) {
+                        val request = incomingRequests.body()!!.data.requests.find { it.id == requestId }
+                        if (request != null) {
+                            fcmRepository.sendFriendRequestAcceptedNotification(
+                                receiverId = request.user.id,
+                                accepterName = "${request.user.lastName} ${request.user.firstName}"
+                            )
+                        }
+                    }
                 } else {
                     _acceptFriendRequestResult.value =
                         LoadingResult.Error(response.body()?.message ?: "Unknown error")
-                    Log.e(
-                        "FriendModalViewModel",
-                        "Error accepting friend request: ${response.body()?.message}"
-                    )
                 }
             } catch (e: Exception) {
-                Log.e("FriendModalViewModel", "An error occurred while accepting friend request: ${e.message}", e)
-                _acceptFriendRequestResult.value = LoadingResult.Error("An error occurred while accepting friend request: ${e.message}")
+                Log.e("FriendModalViewModel", "Error accepting friend request: ${e.message}", e)
+                _acceptFriendRequestResult.value = LoadingResult.Error("Error accepting friend request: ${e.message}")
             }
         }
     }
@@ -233,7 +252,7 @@ class FriendModalViewModel @Inject constructor(
             try {
                 val response = friendRepository.fetchFriendList()
                 if (response.isSuccessful && response.body()?.code == 200) {
-                    val friendList = response.body()?.data?.friends?.toDomain() ?: emptyList()
+                    val friendList = response.body()?.data?.toDomain() ?: emptyList()
                     _fetchFriendListResult.value = LoadingResult.Success(friendList)
                 } else {
                     _fetchFriendListResult.value =

@@ -76,6 +76,16 @@ fun LiveSnapNavHost(
 
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
+    // Check token when NavHost is created
+    LaunchedEffect(Unit) {
+        val token = authSelectViewModel.tokenManager.getToken()
+        if (token == null || token.isEmpty()) {
+            navController.navigate(AuthSelectDestination.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         AuthEventBus.events.collect { event ->
             when (event) {

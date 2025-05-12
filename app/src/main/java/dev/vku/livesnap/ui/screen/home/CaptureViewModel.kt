@@ -113,7 +113,7 @@ class CaptureViewModel @Inject constructor(
             try {
                 val response = friendRepository.fetchFriendList()
                 if (response.isSuccessful && response.body()?.code == 200) {
-                    val count = response.body()?.data?.friends?.size ?: 0
+                    val count = response.body()?.data?.size ?: 0
                     _friendCount.value = count
                     _fetchFriendCountResult.value = LoadingResult.Success(count)
                     Log.d("CaptureViewModel", "$count")

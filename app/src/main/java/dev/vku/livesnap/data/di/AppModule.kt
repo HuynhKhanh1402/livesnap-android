@@ -10,11 +10,13 @@ import dev.vku.livesnap.data.remote.ApiService
 import dev.vku.livesnap.data.remote.AuthInterceptor
 import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.DefaultAuthRepository
+import dev.vku.livesnap.data.repository.DefaultFCMRepository
 import dev.vku.livesnap.data.repository.DefaultFriendRepository
 import dev.vku.livesnap.data.repository.DefaultSnapRepository
 import dev.vku.livesnap.data.repository.DefaultUsersRepository
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.data.repository.FriendRepository
+import dev.vku.livesnap.data.repository.FCMRepository
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import okhttp3.OkHttpClient
@@ -85,6 +87,12 @@ object AppModule {
             firestore =  FirebaseFirestore.getInstance(),
             tokenManager = tokenManager
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideFCMRepository(): FCMRepository {
+        return DefaultFCMRepository(FirebaseFirestore.getInstance())
     }
 
     @Provides
