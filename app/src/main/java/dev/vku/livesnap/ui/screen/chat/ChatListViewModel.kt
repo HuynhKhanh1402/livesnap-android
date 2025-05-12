@@ -1,15 +1,19 @@
 package dev.vku.livesnap.ui.screen.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.data.repository.UsersRepository
+import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.model.Chat
 import dev.vku.livesnap.domain.model.User
-import dev.vku.livesnap.domain.mapper.toDomain
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -51,7 +55,7 @@ class ChatListViewModel @Inject constructor(
                 .collect { chats ->
                     val currentUserId = getCurrentUserId()
                     val chatsWithUsers = chats.map { chat ->
-                        val otherUserId = chat.participants.firstOrNull { it != currentUserId }
+                        val otherUserId = chat.participants.find { it != currentUserId }
                         val otherUser = otherUserId?.let { fetchUserDetails(it) }
                         ChatWithUser(chat, otherUser)
                     }
@@ -70,6 +74,7 @@ class ChatListViewModel @Inject constructor(
                 null
             }
         } catch (e: Exception) {
+            Log.e("ChatListViewModel", "Error fetching user details: ${e.message}", e)
             null
         }
     }
@@ -80,14 +85,15 @@ class ChatListViewModel @Inject constructor(
         }
         return try {
             val parts = token.split(".")
-            if (parts.size != 3) return ""
+            if (parts.size != 3) throw RuntimeException("Invalid token format")
+
             val payload = parts[1]
-            val decodedPayload = android.util.Base64.decode(payload, android.util.Base64.DEFAULT)
+            val decodedPayload = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
             val jsonString = String(decodedPayload)
             val jsonObject = org.json.JSONObject(jsonString)
-            jsonObject.getString("sub")
+            jsonObject.getString("userId")
         } catch (e: Exception) {
-            ""
+            throw RuntimeException("Invalid token format", e)
         }
     }
 
