@@ -9,6 +9,7 @@ import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -127,4 +128,7 @@ interface ApiService {
 
     @POST("users/fcm-token")
     suspend fun updateFcmToken(@Body request: UpdateFcmTokenRequest): Response<DefaultResponse>
+
+    @PATCH("users/update-username")
+    suspend fun updateUsername(@Body request: UpdateUsernameRequest): Response<DefaultResponse>
 }

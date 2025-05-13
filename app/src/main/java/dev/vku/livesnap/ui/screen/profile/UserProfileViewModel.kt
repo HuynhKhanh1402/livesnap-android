@@ -62,6 +62,13 @@ sealed class ChangeEmailUiState {
     data class Error(val message: String) : ChangeEmailUiState()
 }
 
+sealed class UpdateUsernameUiState {
+    data object Initial : UpdateUsernameUiState()
+    data object Loading : UpdateUsernameUiState()
+    data object Success : UpdateUsernameUiState()
+    data class Error(val message: String) : UpdateUsernameUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -90,6 +97,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _changeEmailUiState = MutableStateFlow<ChangeEmailUiState>(ChangeEmailUiState.Initial)
     val changeEmailUiState: StateFlow<ChangeEmailUiState> = _changeEmailUiState
+
+    private val _updateUsernameUiState = MutableStateFlow<UpdateUsernameUiState>(UpdateUsernameUiState.Initial)
+    val updateUsernameUiState: StateFlow<UpdateUsernameUiState> = _updateUsernameUiState
 
     fun fetchUser() {
         viewModelScope.launch {
@@ -248,5 +258,30 @@ class UserProfileViewModel @Inject constructor(
 
     fun resetChangeEmailUiState() {
         _changeEmailUiState.value = ChangeEmailUiState.Initial
+    }
+
+    fun updateUsername(username: String) {
+        viewModelScope.launch {
+            _updateUsernameUiState.value = UpdateUsernameUiState.Loading
+            try {
+                val response = userRepository.updateUsername(username)
+                if (response.isSuccessful) {
+                    _updateUsernameUiState.value = UpdateUsernameUiState.Success
+                    fetchUser() // Refresh user data
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Username updated successfully"))
+                } else {
+                    val errorMessage = response.body()?.message ?: "Failed to update username"
+                    _updateUsernameUiState.value = UpdateUsernameUiState.Error(errorMessage)
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar(errorMessage))
+                }
+            } catch (e: Exception) {
+                _updateUsernameUiState.value = UpdateUsernameUiState.Error(e.message ?: "An error occurred")
+                _uiEvent.emit(ProfileUiEvent.ShowSnackbar(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    fun resetUpdateUsernameState() {
+        _updateUsernameUiState.value = UpdateUsernameUiState.Initial
     }
 }
