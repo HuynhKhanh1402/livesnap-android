@@ -55,6 +55,22 @@ class FeedViewModel @Inject constructor(
     private var _isFetchingCurrentSnap = MutableStateFlow<Boolean>(false)
     var isFetchingCurrentSnap: StateFlow<Boolean> = _isFetchingCurrentSnap
 
+    fun resetState() {
+        // Reset all state flows
+        _loadSnapResult.value = LoadSnapResult.Idle
+        _reactSnapResult.value = LoadingResult.Idle
+        _sendMessageResult.value = LoadingResult.Idle
+        _isFetchingCurrentSnap.value = false
+
+        // Reset all mutable state variables
+        snaps = emptyList()
+        isLoading = false
+        currentPage = 1
+        hasNextPage = true
+        currentSnap = null
+        isFirstLoad = true
+    }
+
     fun loadSnaps() {
         if (isLoading || !hasNextPage) return
 

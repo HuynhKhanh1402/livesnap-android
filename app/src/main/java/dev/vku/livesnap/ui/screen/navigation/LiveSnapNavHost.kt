@@ -71,6 +71,7 @@ fun LiveSnapNavHost(
     val captureViewModel: CaptureViewModel = hiltViewModel()
     var friendModalViewModel: FriendModalViewModel = hiltViewModel()
     val feedViewModel: FeedViewModel = hiltViewModel()
+    val uploadSnapViewModel: UploadSnapViewModel = hiltViewModel()
 
     val userProfileViewModel: UserProfileViewModel = hiltViewModel()
 
@@ -80,6 +81,16 @@ fun LiveSnapNavHost(
     LaunchedEffect(Unit) {
         val token = authSelectViewModel.tokenManager.getToken()
         if (token == null || token.isEmpty()) {
+            // Reset all ViewModels before navigating to auth screen
+            userProfileViewModel.viewModelResetManager.resetAllViewModels(
+                loginViewModel = loginViewModel,
+                registrationViewModel = registrationViewModel,
+                captureViewModel = captureViewModel,
+                feedViewModel = feedViewModel,
+                friendModalViewModel = friendModalViewModel,
+                uploadSnapViewModel = uploadSnapViewModel,
+                userProfileViewModel = userProfileViewModel
+            )
             navController.navigate(AuthSelectDestination.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -104,6 +115,16 @@ fun LiveSnapNavHost(
             confirmButton = {
                 TextButton(onClick = {
                     authSelectViewModel.clearToken()
+                    // Reset all ViewModels before navigating to auth screen
+                    userProfileViewModel.viewModelResetManager.resetAllViewModels(
+                        loginViewModel = loginViewModel,
+                        registrationViewModel = registrationViewModel,
+                        captureViewModel = captureViewModel,
+                        feedViewModel = feedViewModel,
+                        friendModalViewModel = friendModalViewModel,
+                        uploadSnapViewModel = uploadSnapViewModel,
+                        userProfileViewModel = userProfileViewModel
+                    )
                     showSessionExpiredDialog = false
                     navController.navigate(AuthSelectDestination.route) {
                         popUpTo(0) { inclusive = true }
@@ -209,7 +230,6 @@ fun LiveSnapNavHost(
             ) {
                 val uri = it.arguments?.getString("uri")?.toUri()
                 uri?.let {
-                    val uploadSnapViewModel: UploadSnapViewModel = hiltViewModel()
                     UploadSnapScreen(
                         viewModel = uploadSnapViewModel,
                         imageUri = uri,
@@ -235,6 +255,15 @@ fun LiveSnapNavHost(
                         navController.navigate(AuthSelectDestination.route) {
                             popUpTo(0) { inclusive = true }
                         }
+                        userProfileViewModel.viewModelResetManager.resetAllViewModels(
+                            loginViewModel = loginViewModel,
+                            registrationViewModel = registrationViewModel,
+                            captureViewModel = captureViewModel,
+                            feedViewModel = feedViewModel,
+                            friendModalViewModel = friendModalViewModel,
+                            uploadSnapViewModel = uploadSnapViewModel,
+                            userProfileViewModel = userProfileViewModel
+                        )
                     }
                 )
             }

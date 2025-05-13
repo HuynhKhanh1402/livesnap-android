@@ -58,6 +58,16 @@ class UploadSnapViewModel @Inject constructor(
 
     private val _isCaptionValid = MutableStateFlow(true)
 
+    fun resetState() {
+        // Reset all state flows
+        _loadBitmapResult.value = LoadBitmapResult.Idle
+        _uploadSnapResult.value = UploadSnapResult.Idle
+        _uploadState.value = false
+        _loadingState.value = false
+        _caption.value = ""
+        _isCaptionValid.value = true
+    }
+
     fun onCaptionChange(newCaption: String) {
         if (newCaption.length <= 100) {
             _caption.value = newCaption

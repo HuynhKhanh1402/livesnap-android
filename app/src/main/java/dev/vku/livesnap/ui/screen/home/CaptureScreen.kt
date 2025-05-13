@@ -84,7 +84,7 @@ fun CaptureScreen(
     val capturedImageUri by viewModel.capturedImageUri.collectAsState()
 
     val fetchFriendCountResult by viewModel.fetchFriendCountResult.collectAsState()
-    val friendCount by viewModel.friendCount.collectAsState()
+    var friendCount = if (fetchFriendCountResult is LoadingResult.Success) (fetchFriendCountResult as LoadingResult.Success).data else 0
 
     val friendSheetState = rememberModalBottomSheetState()
     var showFriendSheet by remember { mutableStateOf(false) }
@@ -165,9 +165,6 @@ fun CaptureScreen(
 
     LaunchedEffect(fetchFriendCountResult) {
         when (fetchFriendCountResult) {
-            is LoadingResult.Success -> {
-                viewModel.resetFetchFriendCountResult()
-            }
             is LoadingResult.Error -> {
                 snackbarHostState.showSnackbar((fetchFriendCountResult as LoadingResult.Error).message)
                 viewModel.resetFetchFriendCountResult()

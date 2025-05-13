@@ -3,6 +3,7 @@ package dev.vku.livesnap.ui.screen.profile
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,6 +12,7 @@ import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.ui.ViewModelResetManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,10 +68,9 @@ sealed class ChangeEmailUiState {
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
     val userRepository: UsersRepository,
-    val authRepository: AuthRepository
+    val authRepository: AuthRepository,
+    val viewModelResetManager: ViewModelResetManager
 ) : ViewModel() {
-    var isFirstLoad = true
-
     private val _fetchUserResult = MutableStateFlow<FetchUserResult>(FetchUserResult.Idle)
     val fetchUserResult: StateFlow<FetchUserResult> = _fetchUserResult
 
@@ -91,12 +92,23 @@ class UserProfileViewModel @Inject constructor(
     private val _changeEmailUiState = MutableStateFlow<ChangeEmailUiState>(ChangeEmailUiState.Initial)
     val changeEmailUiState: StateFlow<ChangeEmailUiState> = _changeEmailUiState
 
+    fun resetState() {
+        _fetchUserResult.value = FetchUserResult.Idle
+        _logoutResult.value = LogoutResult.Idle
+        _logoutUiState.value = LogoutUiState.Initial
+        _uploadAvatarResult.value = UploadAvatarResult.Idle
+        _loadingState.value = false
+        _changeEmailUiState.value = ChangeEmailUiState.Initial
+    }
+
     fun fetchUser() {
         viewModelScope.launch {
             _loadingState.value = true
-            isFirstLoad = false
             try {
+                Log.d("UserProfileViewModel", "Fetching user detail")
                 val response = userRepository.fetchUserDetail()
+                Log.d("UserProfileViewModel", "Response: $response")
+                Log.d("UserProfileViewModel", "Response body: ${response.body()}")
                 if (response.isSuccessful) {
                     val user = response.body()?.data?.user?.toDomain()
                     if (user != null) {
@@ -116,11 +128,6 @@ class UserProfileViewModel @Inject constructor(
         }
     }
 
-    fun resetFetchUserResult() {
-        _fetchUserResult.value = FetchUserResult.Idle
-        isFirstLoad = true
-    }
-
     fun logout() {
         viewModelScope.launch {
             _logoutUiState.value = LogoutUiState.Loading
@@ -128,6 +135,7 @@ class UserProfileViewModel @Inject constructor(
                 val response = authRepository.logout()
                 if (response.isSuccessful) {
                     tokenManager.clearToken()
+                    viewModelResetManager.resetAllViewModels()
                     _logoutUiState.value = LogoutUiState.Success
                     _logoutResult.value = LogoutResult.Success
                 } else {
@@ -138,6 +146,7 @@ class UserProfileViewModel @Inject constructor(
                 _logoutUiState.value = LogoutUiState.Error("Error logging out: ${e.message}")
                 _logoutResult.value = LogoutResult.Error("Error logging out: ${e.message}")
                 tokenManager.clearToken()
+                viewModelResetManager.resetAllViewModels()
             }
         }
     }

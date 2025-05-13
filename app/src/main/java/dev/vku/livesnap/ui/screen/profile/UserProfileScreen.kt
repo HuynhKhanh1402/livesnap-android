@@ -110,6 +110,12 @@ fun UserProfileScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (fetchUserResult !is FetchUserResult.Success) {
+            viewModel.fetchUser()
+        }
+    }
+
     LaunchedEffect(fetchUserResult) {
         when (fetchUserResult) {
             is FetchUserResult.Success -> {
@@ -118,20 +124,16 @@ fun UserProfileScreen(
             is FetchUserResult.Error -> {
                 snackbarHostState.showSnackbar((fetchUserResult as FetchUserResult.Error).message)
             }
-            is FetchUserResult.Idle -> {
-                if (viewModel.isFirstLoad) {
-                    viewModel.fetchUser()
-                }
-            }
+            else -> {}
         }
     }
 
     LaunchedEffect(logoutResult) {
         when (logoutResult) {
             is LogoutResult.Success -> {
-                snackbarHostState.showSnackbar("Logout successful!")
                 viewModel.resetLogoutState()
                 onLoggedOut()
+                snackbarHostState.showSnackbar("Logout successful!")
             }
             is LogoutResult.Error -> {
                 snackbarHostState.showSnackbar((logoutResult as LogoutResult.Error).message)

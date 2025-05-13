@@ -51,11 +51,7 @@ class CaptureViewModel @Inject constructor(
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
 
-    private val _friendCount = MutableStateFlow(0)
-    val friendCount: StateFlow<Int> = _friendCount
-
     var isFirstLoad = true
-        private set
 
     fun checkCameraPermission() {
         _hasCameraPermission.value = ContextCompat.checkSelfPermission(
@@ -114,7 +110,6 @@ class CaptureViewModel @Inject constructor(
                 val response = friendRepository.fetchFriendList()
                 if (response.isSuccessful && response.body()?.code == 200) {
                     val count = response.body()?.data?.size ?: 0
-                    _friendCount.value = count
                     _fetchFriendCountResult.value = LoadingResult.Success(count)
                     Log.d("CaptureViewModel", "$count")
                 } else {
@@ -132,5 +127,13 @@ class CaptureViewModel @Inject constructor(
 
     fun resetFetchFriendCountResult() {
         _fetchFriendCountResult.value = LoadingResult.Idle
+    }
+
+    fun resetState() {
+        _isFlashOn.value = false
+        _lensFacing.value = CameraSelector.LENS_FACING_BACK
+        _capturedImageUri.value = null
+        _fetchFriendCountResult.value = LoadingResult.Idle
+        isFirstLoad = true
     }
 }

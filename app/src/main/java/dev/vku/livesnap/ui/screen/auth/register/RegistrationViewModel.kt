@@ -81,6 +81,24 @@ class RegistrationViewModel @Inject constructor(
     private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
     var loginResult: StateFlow<LoginResult> = _loginResult
 
+    fun resetState() {
+        // Reset all mutable state variables
+        email = ""
+        isEmailValid = true
+        firstName = ""
+        lastName = ""
+        firstNameError = null
+        lastNameError = null
+        password = ""
+        username = ""
+        isLoading = false
+
+        // Reset all state flows
+        _emailExistResult.value = EmailExistResult.Idle
+        _registrationResult.value = RegistrationResult.Idle
+        _loginResult.value = LoginResult.Idle
+    }
+
     fun setFirstNameField(first: String) {
         firstName = first
     }

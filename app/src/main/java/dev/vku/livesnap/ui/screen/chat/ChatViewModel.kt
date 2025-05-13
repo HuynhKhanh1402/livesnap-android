@@ -43,6 +43,17 @@ class ChatViewModel @Inject constructor(
     private val _snapMap = MutableStateFlow<Map<String, Snap>>(emptyMap())
     val snapMap: StateFlow<Map<String, Snap>> = _snapMap.asStateFlow()
 
+    fun resetState() {
+        _messages.value = emptyList()
+        _isLoading.value = false
+        _error.value = null
+        _otherUser.value = null
+        _snapMap.value = emptyMap()
+
+        currentChatId = null
+        currentLimit = 20L
+    }
+
     fun loadMessages(chatId: String) {
         if (currentChatId == chatId) return
         currentChatId = chatId

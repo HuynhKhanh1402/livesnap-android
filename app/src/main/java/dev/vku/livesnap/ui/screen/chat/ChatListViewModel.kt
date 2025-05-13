@@ -97,7 +97,10 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun clearError() {
+
+    fun resetState() {
         _error.value = null
+        _chats.value = emptyList<ChatWithUser>()
+        _isLoading.value = false
     }
 } 

@@ -122,4 +122,16 @@ class LoginViewModel @Inject constructor(
     fun resetLoginResult() {
         _loginResult.value = LoginResult.Idle
     }
+
+    fun resetState() {
+        email = ""
+        password = ""
+        isEmailValid = true
+        isEmailNonExist = false
+        passwordError = null
+        resetLoginResult()
+        resetLoginResult()
+        resetCheckEmailExistResult()
+        isLoading = false
+    }
 }

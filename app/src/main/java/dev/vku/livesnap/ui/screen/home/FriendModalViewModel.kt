@@ -71,10 +71,36 @@ class FriendModalViewModel @Inject constructor(
     private val _cancelFriendRequestResult = MutableStateFlow<LoadingResult<Unit>>(LoadingResult.Idle)
     val cancelFriendRequestResult: StateFlow<LoadingResult<Unit>> = _cancelFriendRequestResult
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     init {
         observeSearchQuery()
     }
 
+    fun resetState() {
+        // Reset all state flows
+        _isLoading.value = false
+        _searchQuery.value = ""
+        _searchUsersResult.value = LoadingResult.Idle
+        _sendFriendRequestResult.value = LoadingResult.Idle
+        _fetchIncomingRequestListResult.value = LoadingResult.Idle
+        _acceptFriendRequestResult.value = LoadingResult.Idle
+        _rejectFriendRequestResult.value = LoadingResult.Idle
+        _fetchFriendListResult.value = LoadingResult.Idle
+        _removeFriendResult.value = LoadingResult.Idle
+        _sentFriendRequestListResult.value = LoadingResult.Idle
+        _cancelFriendRequestResult.value = LoadingResult.Idle
+        _error.value = null
+
+        // Reset all mutable state variables
+        isFirstLoad = true
+        requestedUserId = null
+        acceptingRequestId = null
+        rejectingRequestId = null
+        removedFriendId = null
+        cancellingRequestId = null
+    }
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
@@ -311,5 +337,18 @@ class FriendModalViewModel @Inject constructor(
     fun resetCancelFriendRequestResult() {
         _cancelFriendRequestResult.value = LoadingResult.Idle
         fetchSentFriendRequestList()
+    }
+
+    fun clearError() {
+        _error.value = null
+        _searchUsersResult.value = LoadingResult.Idle
+        _sendFriendRequestResult.value = LoadingResult.Idle
+        _fetchIncomingRequestListResult.value = LoadingResult.Idle
+        _acceptFriendRequestResult.value = LoadingResult.Idle
+        _rejectFriendRequestResult.value = LoadingResult.Idle
+        _fetchFriendListResult.value = LoadingResult.Idle
+        _removeFriendResult.value = LoadingResult.Idle
+        _sentFriendRequestListResult.value = LoadingResult.Idle
+        _cancelFriendRequestResult.value = LoadingResult.Idle
     }
 }
