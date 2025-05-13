@@ -51,8 +51,6 @@ class CaptureViewModel @Inject constructor(
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
 
-    var isFirstLoad = true
-
     fun checkCameraPermission() {
         _hasCameraPermission.value = ContextCompat.checkSelfPermission(
             context, Manifest.permission.CAMERA
@@ -119,8 +117,6 @@ class CaptureViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("CaptureViewModel", "An error occurred while fetching friend count: ${e.message}", e)
                 _fetchFriendCountResult.value = LoadingResult.Error("An error occurred while fetching: ${e.message}")
-            } finally {
-                isFirstLoad = false
             }
         }
     }
@@ -134,6 +130,5 @@ class CaptureViewModel @Inject constructor(
         _lensFacing.value = CameraSelector.LENS_FACING_BACK
         _capturedImageUri.value = null
         _fetchFriendCountResult.value = LoadingResult.Idle
-        isFirstLoad = true
     }
 }

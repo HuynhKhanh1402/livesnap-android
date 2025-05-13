@@ -157,8 +157,8 @@ fun CaptureScreen(
         }
     }
 
-    LaunchedEffect(viewModel.isFirstLoad) {
-        if (viewModel.isFirstLoad) {
+    LaunchedEffect(fetchFriendCountResult) {
+        if (fetchFriendCountResult !is LoadingResult.Success) {
             viewModel.fetchFriendCount()
         }
     }
