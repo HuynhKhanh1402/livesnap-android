@@ -876,12 +876,6 @@ fun GeneralSection(
                 .padding(16.dp),
         ) {
             SectionRow(
-                icon = Icons.Default.Phone,
-                text = "Change phone number",
-                onClick = { /* TODO */ }
-            )
-            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
-            SectionRow(
                 icon = Icons.Default.Mail,
                 text = "Change email address",
                 onClick = onChangeEmailClick
