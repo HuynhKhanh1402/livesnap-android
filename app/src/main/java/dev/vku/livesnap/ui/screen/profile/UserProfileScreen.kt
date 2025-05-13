@@ -303,15 +303,15 @@ fun UserProfileScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onTertiary
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Lưu", fontWeight = FontWeight.Bold)
+                    Text("Save", fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    text = "Hủy",
+                    text = "Cancel",
                     modifier = Modifier
                         .clickable { showEditNameDialog = false }
                         .padding(vertical = 12.dp),
