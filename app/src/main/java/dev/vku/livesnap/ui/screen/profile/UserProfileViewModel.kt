@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import dev.vku.livesnap.ui.ViewModelResetManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,7 +13,6 @@ import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.model.User
-import dev.vku.livesnap.ui.ViewModelResetManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +64,13 @@ sealed class ChangeEmailUiState {
     data class Error(val message: String) : ChangeEmailUiState()
 }
 
+sealed class UpdateUsernameUiState {
+    data object Initial : UpdateUsernameUiState()
+    data object Loading : UpdateUsernameUiState()
+    data object Success : UpdateUsernameUiState()
+    data class Error(val message: String) : UpdateUsernameUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -91,6 +98,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _changeEmailUiState = MutableStateFlow<ChangeEmailUiState>(ChangeEmailUiState.Initial)
     val changeEmailUiState: StateFlow<ChangeEmailUiState> = _changeEmailUiState
+
+    private val _updateUsernameUiState = MutableStateFlow<UpdateUsernameUiState>(UpdateUsernameUiState.Initial)
+    val updateUsernameUiState: StateFlow<UpdateUsernameUiState> = _updateUsernameUiState
 
     fun resetState() {
         _fetchUserResult.value = FetchUserResult.Idle
@@ -135,7 +145,6 @@ class UserProfileViewModel @Inject constructor(
                 val response = authRepository.logout()
                 if (response.isSuccessful) {
                     tokenManager.clearToken()
-                    viewModelResetManager.resetAllViewModels()
                     _logoutUiState.value = LogoutUiState.Success
                     _logoutResult.value = LogoutResult.Success
                 } else {
@@ -146,7 +155,6 @@ class UserProfileViewModel @Inject constructor(
                 _logoutUiState.value = LogoutUiState.Error("Error logging out: ${e.message}")
                 _logoutResult.value = LogoutResult.Error("Error logging out: ${e.message}")
                 tokenManager.clearToken()
-                viewModelResetManager.resetAllViewModels()
             }
         }
     }
@@ -257,5 +265,30 @@ class UserProfileViewModel @Inject constructor(
 
     fun resetChangeEmailUiState() {
         _changeEmailUiState.value = ChangeEmailUiState.Initial
+    }
+
+    fun updateUsername(username: String) {
+        viewModelScope.launch {
+            _updateUsernameUiState.value = UpdateUsernameUiState.Loading
+            try {
+                val response = userRepository.updateUsername(username)
+                if (response.isSuccessful) {
+                    _updateUsernameUiState.value = UpdateUsernameUiState.Success
+                    fetchUser() // Refresh user data
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar("Username updated successfully"))
+                } else {
+                    val errorMessage = response.body()?.message ?: "Failed to update username"
+                    _updateUsernameUiState.value = UpdateUsernameUiState.Error(errorMessage)
+                    _uiEvent.emit(ProfileUiEvent.ShowSnackbar(errorMessage))
+                }
+            } catch (e: Exception) {
+                _updateUsernameUiState.value = UpdateUsernameUiState.Error(e.message ?: "An error occurred")
+                _uiEvent.emit(ProfileUiEvent.ShowSnackbar(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    fun resetUpdateUsernameState() {
+        _updateUsernameUiState.value = UpdateUsernameUiState.Initial
     }
 }

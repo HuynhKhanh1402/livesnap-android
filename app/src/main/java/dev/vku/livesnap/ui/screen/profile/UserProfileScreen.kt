@@ -182,7 +182,8 @@ fun UserProfileScreen(
             ProfileHeader(
                 user = user!!,
                 onUploadAvatarBtnClicked = { showAvatarDialog = true },
-                onEditNameClicked = { showEditNameDialog = true }
+                onEditNameClicked = { showEditNameDialog = true },
+                viewModel = viewModel
             )
             Spacer(modifier = Modifier.height(24.dp))
             InviteCard(user!!)
@@ -305,15 +306,15 @@ fun UserProfileScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onTertiary
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Lưu", fontWeight = FontWeight.Bold)
+                    Text("Save", fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    text = "Hủy",
+                    text = "Cancel",
                     modifier = Modifier
                         .clickable { showEditNameDialog = false }
                         .padding(vertical = 12.dp),
@@ -508,12 +509,20 @@ fun UserProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileHeader(
     user: User,
     onUploadAvatarBtnClicked: () -> Unit,
-    onEditNameClicked: () -> Unit
+    onEditNameClicked: () -> Unit,
+    viewModel: UserProfileViewModel
 ) {
+    var showEditUsernameDialog by remember { mutableStateOf(false) }
+    var newUsername by remember { mutableStateOf(user.username) }
+    var showUsernameError by remember { mutableStateOf(false) }
+    var usernameErrorMessage by remember { mutableStateOf("") }
+    val updateUsernameUiState by viewModel.updateUsernameUiState.collectAsState()
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -537,7 +546,10 @@ fun ProfileHeader(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Tag(user.username)
+            Tag(
+                text = user.username,
+                onClick = { showEditUsernameDialog = true }
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = onEditNameClicked,
@@ -549,6 +561,118 @@ fun ProfileHeader(
             ) {
                 Text("Edit profile")
             }
+        }
+    }
+
+    // Username Edit Modal
+    if (showEditUsernameDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { 
+                showEditUsernameDialog = false
+                newUsername = user.username
+                showUsernameError = false
+                usernameErrorMessage = ""
+                viewModel.resetUpdateUsernameState()
+            },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Edit your username",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                TextField(
+                    value = newUsername,
+                    onValueChange = { 
+                        newUsername = it
+                        showUsernameError = false
+                        usernameErrorMessage = ""
+                    },
+                    label = { Text("Username") },
+                    isError = showUsernameError,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+                if (showUsernameError) {
+                    Text(
+                        text = usernameErrorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                if (updateUsernameUiState is UpdateUsernameUiState.Error) {
+                    Text(
+                        text = (updateUsernameUiState as UpdateUsernameUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        when {
+                            newUsername.isBlank() -> {
+                                showUsernameError = true
+                                usernameErrorMessage = "Username cannot be empty"
+                            }
+                            newUsername.contains(" ") -> {
+                                showUsernameError = true
+                                usernameErrorMessage = "Username cannot contain spaces"
+                            }
+                            newUsername == user.username -> {
+                                showEditUsernameDialog = false
+                            }
+                            else -> {
+                                viewModel.updateUsername(newUsername)
+                            }
+                        }
+                    },
+                    enabled = updateUsernameUiState !is UpdateUsernameUiState.Loading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (updateUsernameUiState is UpdateUsernameUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Save", fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    text = "Cancel",
+                    modifier = Modifier
+                        .clickable { 
+                            showEditUsernameDialog = false
+                            newUsername = user.username
+                            showUsernameError = false
+                            usernameErrorMessage = ""
+                            viewModel.resetUpdateUsernameState()
+                        }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(updateUsernameUiState) {
+        if (updateUsernameUiState is UpdateUsernameUiState.Success) {
+            showEditUsernameDialog = false
+            viewModel.resetUpdateUsernameState()
         }
     }
 }
@@ -638,7 +762,11 @@ fun AddButton(
 }
 
 @Composable
-fun Tag(text: String, bold: Boolean = false) {
+fun Tag(
+    text: String, 
+    bold: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     Box(
         modifier = Modifier
             .background(
@@ -646,6 +774,13 @@ fun Tag(text: String, bold: Boolean = false) {
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
     ) {
         Text(
             text = text,

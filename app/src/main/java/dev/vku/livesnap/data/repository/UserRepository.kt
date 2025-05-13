@@ -5,10 +5,12 @@ import dev.vku.livesnap.data.remote.dto.request.CheckEmailExistRequest
 import dev.vku.livesnap.data.remote.dto.request.CheckUsernameExistRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserListResponse
+import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import retrofit2.Response
 
 interface UsersRepository {
@@ -21,6 +23,7 @@ interface UsersRepository {
     suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
     suspend fun updateEmail(email: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
     suspend fun updateFcmToken(fcmToken: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
+    suspend fun updateUsername(username: String): Response<DefaultResponse>
 }
 
 class DefaultUsersRepository(
@@ -63,5 +66,9 @@ class DefaultUsersRepository(
 
     override suspend fun updateFcmToken(fcmToken: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
         return apiService.updateFcmToken(UpdateFcmTokenRequest(fcmToken))
+    }
+
+    override suspend fun updateUsername(username: String): Response<DefaultResponse> {
+        return apiService.updateUsername(UpdateUsernameRequest(username))
     }
 }
