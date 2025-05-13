@@ -68,7 +68,7 @@ interface ApiService {
     @GET("users/search")
     suspend fun searchUsers(@Query("username") query: String): Response<UserListResponse>
 
-    @GET("snaps/test")
+    @GET("snaps/load")
     suspend fun fetchSnaps(
         @Query("page") page: Int,
         @Query("limit") limit: Int
