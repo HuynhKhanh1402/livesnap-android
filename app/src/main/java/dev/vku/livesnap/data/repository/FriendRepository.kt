@@ -4,6 +4,7 @@ import dev.vku.livesnap.data.remote.ApiService
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.FriendListResponse
 import dev.vku.livesnap.data.remote.dto.response.FriendRequestListResponse
+import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
 import retrofit2.Response
 
 interface FriendRepository {
@@ -15,6 +16,7 @@ interface FriendRepository {
     suspend fun rejectFriendRequest(requestId: String): Response<DefaultResponse>
     suspend fun removeFriend(friendId: String): Response<DefaultResponse>
     suspend fun cancelFriendRequest(requestId: String): Response<DefaultResponse>
+    suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO>
 }
 
 class DefaultFriendRepository(
@@ -53,5 +55,9 @@ class DefaultFriendRepository(
 
     override suspend fun cancelFriendRequest(requestId: String): Response<DefaultResponse> {
         return apiService.cancelFriendRequest(requestId)
+    }
+
+    override suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO> {
+        return apiService.fetchFriendSuggestions()
     }
 }

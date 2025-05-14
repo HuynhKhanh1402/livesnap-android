@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
 import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
@@ -74,6 +75,9 @@ class FriendModalViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _suggestionFriendsResult = MutableStateFlow<LoadingResult<List<FriendSuggestionListDTO.FriendSuggestion>>>(LoadingResult.Idle)
+    val suggestionFriendsResult: StateFlow<LoadingResult<List<FriendSuggestionListDTO.FriendSuggestion>>> = _suggestionFriendsResult
+
     init {
         observeSearchQuery()
     }
@@ -91,6 +95,7 @@ class FriendModalViewModel @Inject constructor(
         _removeFriendResult.value = LoadingResult.Idle
         _sentFriendRequestListResult.value = LoadingResult.Idle
         _cancelFriendRequestResult.value = LoadingResult.Idle
+        _suggestionFriendsResult.value = LoadingResult.Idle
         _error.value = null
 
         // Reset all mutable state variables
@@ -350,5 +355,25 @@ class FriendModalViewModel @Inject constructor(
         _removeFriendResult.value = LoadingResult.Idle
         _sentFriendRequestListResult.value = LoadingResult.Idle
         _cancelFriendRequestResult.value = LoadingResult.Idle
+    }
+
+    fun fetchSuggestionFriends() {
+        viewModelScope.launch {
+            _suggestionFriendsResult.value = LoadingResult.Loading
+            try {
+                val response = friendRepository.fetchFriendSuggestions()
+                Log.d("FriendModalViewModel", "Response: $response")
+                Log.d("FriendModalViewModel", "Response: ${response.body()}")
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    val suggestions = response.body()?.data?.suggestions ?: emptyList()
+                    _suggestionFriendsResult.value = LoadingResult.Success(suggestions)
+                } else {
+                    _suggestionFriendsResult.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
+                }
+            } catch (e: Exception) {
+                Log.e("FriendModalViewModel", "An error occurred while fetching suggestion friends: ${e.message}", e)
+                _suggestionFriendsResult.value = LoadingResult.Error("An error occurred while fetching suggestion friends: ${e.message}")
+            }
+        }
     }
 }

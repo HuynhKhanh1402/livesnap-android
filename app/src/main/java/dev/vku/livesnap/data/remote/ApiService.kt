@@ -15,6 +15,7 @@ import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.FriendListResponse
 import dev.vku.livesnap.data.remote.dto.response.FriendRequestListResponse
+import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapResponse
 import dev.vku.livesnap.data.remote.dto.response.SnapsResponse
@@ -116,6 +117,9 @@ interface ApiService {
 
     @DELETE("friends/cancel-request/{requestId}")
     suspend fun cancelFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+
+    @GET("friends/suggestions")
+    suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO>
 
     @POST("users/check-password")
     suspend fun checkPassword(@Body request: CheckPasswordRequest): Response<DefaultResponse>

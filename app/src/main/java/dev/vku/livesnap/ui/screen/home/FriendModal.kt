@@ -70,6 +70,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
+import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
 import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.domain.model.FriendRequest
 import dev.vku.livesnap.domain.model.User
@@ -101,6 +102,7 @@ fun FriendModal(
     val sentFriendRequestListResult by viewModel.sentFriendRequestListResult.collectAsState()
     val cancelFriendRequestResult by viewModel.cancelFriendRequestResult.collectAsState()
 
+    val suggestionFriendsResult by viewModel.suggestionFriendsResult.collectAsState()
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -218,6 +220,56 @@ fun FriendModal(
                     )
                 }
             }
+
+            Text(
+                text = "SUGGESTED FRIENDS",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (suggestionFriendsResult is LoadingResult.Success) {
+                val suggestions = (suggestionFriendsResult as LoadingResult.Success<List<FriendSuggestionListDTO.FriendSuggestion>>).data
+                if (suggestions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No suggestions available.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    SuggestionFriendsList(
+                        suggestions = suggestions,
+                        isRequesting = sendFriendRequestResult is LoadingResult.Loading,
+                        requestedUserId = viewModel.requestedUserId,
+                        onFriendRequest = { user ->
+                            viewModel.sendFriendRequest(user.id)
+                        }
+                    )
+                }
+            }
+
+            if (suggestionFriendsResult is LoadingResult.Error) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = (suggestionFriendsResult as LoadingResult.Error).message,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 
@@ -226,6 +278,7 @@ fun FriendModal(
             viewModel.fetchIncomingRequestList()
             viewModel.fetchFriendList()
             viewModel.fetchSentFriendRequestList()
+            viewModel.fetchSuggestionFriends()
         }
     }
 
@@ -1143,6 +1196,141 @@ fun SentFriendRequest(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SuggestionFriendsList(
+    suggestions: List<FriendSuggestionListDTO.FriendSuggestion>,
+    isRequesting: Boolean,
+    requestedUserId: String?,
+    onFriendRequest: (User) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 400.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        items(suggestions) { suggestion ->
+            val user = suggestion.user
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color.Gray,
+                            shape = CircleShape
+                        )
+                        .size(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = CircleShape
+                            )
+                            .size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = CircleShape
+                                )
+                                .size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (user.avatar != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context = LocalContext.current)
+                                        .crossfade(false)
+                                        .data(user.avatar)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Text(
+                                    text = "${user.lastName[0]}${user.firstName[0]}",
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = "${user.lastName} ${user.firstName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(bottom = 4.dp)
+                    )
+
+                    Text(
+                        text = user.username,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Text(
+                        text = "${suggestion.mutualCount} mutual friends ✨",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = {
+                        onFriendRequest(user)
+                    },
+                    shape = RoundedCornerShape(50),
+                    contentPadding = ButtonDefaults.ContentPadding,
+                    enabled = !isRequesting
+                ) {
+                    if (isRequesting && requestedUserId == user.id) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Add",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
                 }
             }
         }
