@@ -288,6 +288,7 @@ class FeedViewModel @Inject constructor(
                     targetUserId.value = friend.id
                     filterDisplayText.value = displayText
                 }
+                loadSnaps()
             } catch (e: Exception) {
                 Log.e("FeedViewModel", "An error occurred while change feed filter value", e)
             }
