@@ -172,11 +172,21 @@ fun FeedScreen(
     }
 
     if (!viewModel.isFirstLoad && snaps.isEmpty()) {
-        EmptyFeed(
-            onInviteClick = {
-            },
-            onCaptureClick = {}
-        )
+        val filterDisplayText by viewModel.filterDisplayText.collectAsState()
+        if (filterDisplayText == "Everyone") {
+            EmptyFeed(
+                onInviteClick = {
+                },
+                onCaptureClick = onNavigateToHome
+            )
+        } else {
+            EmptyUserFeed(
+                userName = filterDisplayText.toString(),
+                viewModel = viewModel,
+                onProfileBtnClicked = onProfileBtnClicked,
+                onChatClick = onChatClick
+            )
+        }
     }
 
     LazyColumn(
@@ -1187,6 +1197,64 @@ fun EmptyFeed(
 
         TextButton(onClick = onInviteClick) {
             Text("Invite friends")
+        }
+    }
+}
+
+@Composable
+fun EmptyUserFeed(
+    userName: String,
+    viewModel: FeedViewModel,
+    onProfileBtnClicked: () -> Unit,
+    onChatClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        FeedTopBar(
+            onProfileBtnClicked = onProfileBtnClicked,
+            onChatClick = onChatClick,
+            viewModel = viewModel
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = "Empty Feed Icon",
+                modifier = Modifier
+                    .size(96.dp)
+                    .padding(bottom = 24.dp),
+                tint = Color.Gray
+            )
+
+            Text(
+                text = "No posts yet!",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "$userName hasn't posted anything yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { viewModel.changeFeedFilterValue(null, "Everyone") }
+            ) {
+                Text("View everyone's posts")
+            }
         }
     }
 }
