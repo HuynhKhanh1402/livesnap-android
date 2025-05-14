@@ -72,7 +72,8 @@ interface ApiService {
     @GET("snaps/load")
     suspend fun fetchSnaps(
         @Query("page") page: Int,
-        @Query("limit") limit: Int
+        @Query("limit") limit: Int,
+        @Query("userId") userId: String? = null
     ): Response<SnapsResponse>
 
     @Multipart

@@ -31,7 +31,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -79,6 +82,7 @@ import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
+import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.domain.model.Reaction
 import dev.vku.livesnap.domain.model.Snap
 import dev.vku.livesnap.ui.util.LoadingResult
@@ -183,6 +187,7 @@ fun FeedScreen(
         items(snaps) {snap ->
             Feed(
                 snap = snap,
+                viewModel = viewModel,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(screenHeight),
@@ -253,6 +258,7 @@ fun FeedScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Feed(
+    viewModel: FeedViewModel,
     modifier: Modifier = Modifier,
     snap: Snap,
     isFetchingDetail: Boolean,
@@ -281,7 +287,8 @@ fun Feed(
             onProfileBtnClicked = onProfileBtnClicked,
             onChatClick = {
                 onChatBtnClicked()
-            }
+            },
+            viewModel = viewModel
         )
 
         Spacer(Modifier.height(64.dp))
@@ -455,8 +462,17 @@ fun Feed(
 @Composable
 fun FeedTopBar(
     onProfileBtnClicked: () -> Unit,
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    viewModel: FeedViewModel
 ) {
+    var showDropdown by remember { mutableStateOf(false) }
+    val filterDisplayText by viewModel.filterDisplayText.collectAsState()
+    val friendsListResult by viewModel.friendsListResult.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchFriends()
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -503,12 +519,13 @@ fun FeedTopBar(
                     .padding(
                         start = 16.dp,
                         end = 16.dp
-                    ),
+                    )
+                    .clickable { showDropdown = true },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Everyone",
+                    text = filterDisplayText.toString(),
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -525,6 +542,178 @@ fun FeedTopBar(
                 )
             }
 
+            DropdownMenu(
+                expanded = showDropdown,
+                onDismissRequest = { showDropdown = false },
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .width(280.dp)
+            ) {
+                // Header
+                Text(
+                    text = "Filter Feed",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp
+                )
+
+                // Everyone option
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Everyone",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    },
+                    onClick = {
+                        showDropdown = false
+                        viewModel.changeFeedFilterValue(null, "Everyone")
+                    },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                // Me option
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Me",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    },
+                    onClick = {
+                        showDropdown = false
+                        viewModel.changeFeedFilterValue(null, "Me")
+                    },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Friends section header
+                Text(
+                    text = "Friends",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+
+                // Friends list
+                when (friendsListResult) {
+                    is LoadingResult.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                    is LoadingResult.Success -> {
+                        val friends = (friendsListResult as LoadingResult.Success<List<Friend>>).data
+                        if (friends.isEmpty()) {
+                            Text(
+                                text = "No friends yet",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            friends.forEach { friend ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            if (friend.avatar != null) {
+                                                UserAvatar(
+                                                    imageUrl = friend.avatar,
+                                                    size = 32
+                                                )
+                                            } else {
+                                                DefaultUserAvatar(
+                                                    initials = "${friend.lastName[0]}${friend.firstName[0]}",
+                                                    size = 32,
+                                                    fontSize = 14
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(
+                                                text = "${friend.firstName} ${friend.lastName}".trim(),
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        showDropdown = false
+                                        viewModel.changeFeedFilterValue(friend, "${friend.firstName} ${friend.lastName}".trim())
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                    is LoadingResult.Error -> {
+                        Text(
+                            text = (friendsListResult as LoadingResult.Error).message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    else -> {}
+                }
+            }
         }
 
         Box(

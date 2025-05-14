@@ -8,11 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
+import dev.vku.livesnap.data.repository.FriendRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +31,9 @@ sealed class LoadSnapResult {
 @HiltViewModel
 class FeedViewModel @Inject constructor(
     val snapRepository: SnapRepository,
-    private val firebaseMessageRepository: FirebaseMessageRepository
+    private val firebaseMessageRepository: FirebaseMessageRepository,
+    private val friendRepository: FriendRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private var _loadSnapResult = MutableStateFlow<LoadSnapResult>(LoadSnapResult.Idle)
     var loadSnapResult: StateFlow<LoadSnapResult> = _loadSnapResult
@@ -38,6 +43,9 @@ class FeedViewModel @Inject constructor(
 
     private var _sendMessageResult = MutableStateFlow<LoadingResult<String>>(LoadingResult.Idle)
     var sendMessageResult: StateFlow<LoadingResult<String>> = _sendMessageResult
+
+    private var _friendsListResult = MutableStateFlow<LoadingResult<List<Friend>>>(LoadingResult.Idle)
+    var friendsListResult: StateFlow<LoadingResult<List<Friend>>> = _friendsListResult
 
     var isFirstLoad = true
 
@@ -55,12 +63,18 @@ class FeedViewModel @Inject constructor(
     private var _isFetchingCurrentSnap = MutableStateFlow<Boolean>(false)
     var isFetchingCurrentSnap: StateFlow<Boolean> = _isFetchingCurrentSnap
 
+    var targetUserId = MutableStateFlow<String?>(null)
+        private set
+    var filterDisplayText = MutableStateFlow<String?>("Everyone")
+        private set
+
     fun resetState() {
         // Reset all state flows
         _loadSnapResult.value = LoadSnapResult.Idle
         _reactSnapResult.value = LoadingResult.Idle
         _sendMessageResult.value = LoadingResult.Idle
         _isFetchingCurrentSnap.value = false
+        _friendsListResult.value = LoadingResult.Idle
 
         // Reset all mutable state variables
         snaps = emptyList()
@@ -79,7 +93,8 @@ class FeedViewModel @Inject constructor(
             _loadSnapResult.value = LoadSnapResult.Idle
 
             try {
-                val response = snapRepository.getSnaps(currentPage, pageSize)
+                Log.i("FeedViewModel", "Fetching ${targetUserId.value}")
+                val response = snapRepository.getSnaps(currentPage, pageSize, targetUserId.value)
                 if (response.isSuccessful) {
                     response.body()?.let {
                         Log.i("FeedViewModel", "Loaded snaps: ${it.data.snaps}")
@@ -238,6 +253,45 @@ class FeedViewModel @Inject constructor(
 
     fun resetSendMessageResult() {
         _sendMessageResult.value = LoadingResult.Idle
+    }
+
+    fun fetchFriends() {
+        viewModelScope.launch {
+            _friendsListResult.value = LoadingResult.Loading
+            try {
+                val response = friendRepository.fetchFriendList()
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    val friends = response.body()?.data?.toDomain() ?: emptyList()
+                    _friendsListResult.value = LoadingResult.Success(friends)
+                } else {
+                    _friendsListResult.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Error fetching friends: ${e.message}", e)
+                _friendsListResult.value = LoadingResult.Error("Error fetching friends: ${e.message}")
+            }
+        }
+    }
+
+    fun changeFeedFilterValue(friend: Friend?, displayText: String) {
+        viewModelScope.launch {
+            try {
+                resetState()
+                if (friend == null) {
+                    if (displayText == "Everyone") {
+                        targetUserId.value = null
+                    } else {
+                        targetUserId.value = authRepository.getCurrentUserId()
+                    }
+                    filterDisplayText.value = displayText
+                } else {
+                    targetUserId.value = friend.id
+                    filterDisplayText.value = displayText
+                }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "An error occurred while change feed filter value", e)
+            }
+        }
     }
 
     private fun isSingleEmojiICU(text: String): Boolean {
