@@ -295,9 +295,9 @@ fun CaptureTopBar(
             IconButton(onClick = onChatBtnClicked) {
                 Icon(
                     imageVector = Icons.Default.ChatBubble,
-                    contentDescription = "Comments",
+                    contentDescription = "Messages",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
         }

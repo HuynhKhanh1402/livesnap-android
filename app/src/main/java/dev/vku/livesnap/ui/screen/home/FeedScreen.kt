@@ -543,7 +543,7 @@ fun FeedTopBar(
                     imageVector = Icons.Default.ChatBubble,
                     contentDescription = "Messages",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
         }
