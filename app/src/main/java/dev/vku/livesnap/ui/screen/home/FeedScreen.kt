@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddReaction
 import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -360,21 +359,25 @@ fun Feed(
                     textAlign = TextAlign.Center,
                 )
 
-                Text("Delete", modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        showDialog.value = false
-                        onDeleteBtnClicked()
-                    }
-                    .padding(vertical = 12.dp),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.error
-                )
+                if (snap.isOwner) {
+                    Text("Delete", 
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showDialog.value = false
+                                onDeleteBtnClicked()
+                            }
+                            .padding(vertical = 12.dp),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
 
-                Text("Cancel", modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDialog.value = false }
-                    .padding(vertical = 12.dp),
+                Text("Cancel", 
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDialog.value = false }
+                        .padding(vertical = 12.dp),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -909,17 +912,7 @@ fun ActionBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = {}
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Collections,
-                contentDescription = "Gallery",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .size(32.dp),
-            )
-        }
+        Spacer(modifier = Modifier.width(32.dp))
 
         Box(
             modifier = Modifier
