@@ -70,7 +70,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -88,6 +87,7 @@ import dev.vku.livesnap.R
 import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.domain.model.Reaction
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -317,8 +317,10 @@ fun Feed(
         FeedPhotoFooter(
             isOwner = snap.isOwner,
             avatar = snap.user.avatar,
-            name = "${snap.user.firstName} ${snap.user.lastName}".trim(),
-            createdAt = snap.createdAt
+            lastName = snap.user.lastName,
+            firstName = snap.user.firstName,
+            createdAt = snap.createdAt,
+            isGold = snap.user.isGold.also { Log.d("FeedScreen", "isGold ${snap.user.username}: $it") }
         )
 
         Spacer(
@@ -442,18 +444,14 @@ fun Feed(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val user = reaction.user
-                            if (user.avatar != null) {
-                                UserAvatar(
-                                    imageUrl = user.avatar,
-                                    size = 40
-                                )
-                            } else {
-                                DefaultUserAvatar(
-                                    initials = "${user.lastName[0]}${user.firstName[0]}",
-                                    size = 40,
-                                    fontSize = 24
-                                )
-                            }
+                            Avatar(
+                                size = 40,
+                                avatarUrl = user.avatar,
+                                initials = "${user.lastName[0]}${user.firstName[0]}",
+                                isGold = user.isGold,
+                                borderWidth = 2.dp,
+                                fontSize = 18
+                            )
 
                             Text(
                                 text = "${user.lastName} ${user.firstName}".trim(),
@@ -700,18 +698,14 @@ fun FeedTopBar(
                                             verticalAlignment = Alignment.CenterVertically,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            if (friend.avatar != null) {
-                                                UserAvatar(
-                                                    imageUrl = friend.avatar,
-                                                    size = 32
-                                                )
-                                            } else {
-                                                DefaultUserAvatar(
-                                                    initials = "${friend.lastName[0]}${friend.firstName[0]}",
-                                                    size = 32,
-                                                    fontSize = 14
-                                                )
-                                            }
+                                            Avatar(
+                                                size = 32,
+                                                avatarUrl = friend.avatar,
+                                                initials = "${friend.lastName[0]}${friend.firstName[0]}",
+                                                isGold = friend.isGold,
+                                                borderWidth = 2.dp,
+                                                fontSize = 14
+                                            )
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = "${friend.firstName} ${friend.lastName}".trim(),
@@ -847,25 +841,25 @@ fun FeedPhoto(image: String, caption: String) {
 }
 
 @Composable
-fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, name: String, createdAt: Date) {
+fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, lastName: String, firstName: String, createdAt: Date, isGold: Boolean) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(avatar)
-                .crossfade(false)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
+        val name = "$lastName $firstName".trim()
+        val initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}".uppercase()
+
+        Avatar(
+            size = 32,
+            avatarUrl = avatar,
+            initials = initials,
+            isGold = isGold,
+            borderWidth = 2.dp,
+            fontSize = 20
         )
 
         Text(
-            text = if (isOwner) "Me" else name.trim(),
+            text = if (isOwner) "Me" else name,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.W700,
             color = MaterialTheme.colorScheme.onBackground,
@@ -1090,20 +1084,14 @@ fun ActivityBar(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        user.avatar.let {
-                            if (it != null) {
-                                UserAvatar(
-                                    imageUrl = it,
-                                    size = 24
-                                )
-                            } else {
-                                DefaultUserAvatar(
-                                    initials = "${user.lastName[0]}${user.firstName[0]}",
-                                    size = 24,
-                                    fontSize = 11
-                                )
-                            }
-                        }
+                        Avatar(
+                            size = 24,
+                            avatarUrl = user.avatar,
+                            initials = "${user.lastName[0]}${user.firstName[0]}",
+                            isGold = user.isGold,
+                            borderWidth = 1.dp,
+                            fontSize = 10
+                        )
                     }
                 }
             }
@@ -1278,61 +1266,6 @@ fun EmptyUserFeed(
 }
 
 @Composable
-fun UserAvatar(imageUrl: String, size: Int, modifier: Modifier = Modifier) {
-    AsyncImage(
-        model = ImageRequest.Builder(context = LocalContext.current)
-            .crossfade(false)
-            .data(imageUrl)
-            .build(),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier
-            .size(size.dp)
-            .clip(CircleShape)
-    )
-}
-
-@Composable
-fun DefaultUserAvatar(initials: String, size: Int, fontSize: Int, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(size.dp)
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = initials,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-private fun formatTimeAgo(date: Date): String {
-    val now = Date()
-    val diffMs = now.time - date.time
-
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(diffMs)
-    val hours = TimeUnit.MILLISECONDS.toHours(diffMs)
-    val days = TimeUnit.MILLISECONDS.toDays(diffMs)
-
-    return when {
-        minutes <= 0 -> "Just now"
-        minutes < 60 -> "${minutes}m"
-        hours < 24 -> "${hours}h"
-        days <= 7 -> "${days}d"
-        else -> {
-            val dateFormat = SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH)
-            dateFormat.format(date)
-        }
-    }
-}
-
-@Composable
 fun FlyingEmojisOverlay(
     emojis: List<FlyingEmoji>,
     onAnimationEnd: (FlyingEmoji) -> Unit
@@ -1358,6 +1291,26 @@ fun FlyingEmojisOverlay(
                     .align(Alignment.BottomCenter)
                     .offset(y = animatable.value.dp)
             )
+        }
+    }
+}
+
+private fun formatTimeAgo(date: Date): String {
+    val now = Date()
+    val diffMs = now.time - date.time
+
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(diffMs)
+    val hours = TimeUnit.MILLISECONDS.toHours(diffMs)
+    val days = TimeUnit.MILLISECONDS.toDays(diffMs)
+
+    return when {
+        minutes <= 0 -> "Just now"
+        minutes < 60 -> "${minutes}m"
+        hours < 24 -> "${hours}h"
+        days <= 7 -> "${days}d"
+        else -> {
+            val dateFormat = SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH)
+            dateFormat.format(date)
         }
     }
 }

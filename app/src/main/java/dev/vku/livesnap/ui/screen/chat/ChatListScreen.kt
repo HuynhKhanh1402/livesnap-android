@@ -33,7 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -128,28 +128,14 @@ fun ChatItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            if (avatarUrl != null) {
-                AsyncImage(
-                    model = avatarUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Text(
-                    text = initials,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
+        Avatar(
+            size = 48,
+            avatarUrl = avatarUrl,
+            initials = initials,
+            isGold = user?.isGold == true,
+            borderWidth = 2.dp,
+            fontSize = 20
+        )
 
         Spacer(modifier = Modifier.width(16.dp))
 

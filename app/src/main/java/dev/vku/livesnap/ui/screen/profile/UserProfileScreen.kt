@@ -3,7 +3,6 @@ package dev.vku.livesnap.ui.screen.profile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +29,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -57,20 +55,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
 object UserProfileDestination : NavigationDestination {
@@ -528,10 +521,11 @@ fun ProfileHeader(
         modifier = Modifier.fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            CircleAvatar(
-                imageUrl = user.avatar,
-                borderColor = MaterialTheme.colorScheme.primary,
-                borderWidth = 4.dp
+            Avatar(
+                size = 120,
+                avatarUrl = user.avatar,
+                initials = "${user.lastName[0]}${user.firstName[0]}",
+                isGold = user.isGold
             )
             AddButton(onClick = onUploadAvatarBtnClicked)
         }
@@ -678,67 +672,6 @@ fun ProfileHeader(
 }
 
 @Composable
-fun CircleAvatar(
-    imageUrl: String?,
-    size: Int = 108,
-    borderColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
-    borderWidth: Dp = 4.dp
-) {
-    Box(
-        modifier = Modifier
-            .size(size.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.background)
-            .border(borderWidth, borderColor, CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        if (imageUrl != null) {
-            AsyncImage(
-                model = ImageRequest.Builder(context = LocalContext.current)
-                    .crossfade(false)
-                    .data(imageUrl)
-                    .build(),
-                contentDescription = "Your avatar",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size((size - borderWidth.value * 2).dp)
-                    .clip(CircleShape)
-            )
-        } else {
-            DefaultCircleAvatar(
-                initials = "?",
-                size = (size - borderWidth.value * 2).toInt(),
-                fontSize = 32
-            )
-        }
-    }
-}
-
-@Composable
-fun DefaultCircleAvatar(
-    initials: String,
-    size: Int = 100,
-    fontSize: Int = 32,
-) {
-    Box(
-        modifier = Modifier
-            .size(size.dp)
-            .background(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = initials,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
 fun AddButton(
     onClick: () -> Unit
 ) {
@@ -763,7 +696,7 @@ fun AddButton(
 
 @Composable
 fun Tag(
-    text: String, 
+    text: String,
     bold: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
@@ -803,35 +736,14 @@ fun InviteCard(user: User) {
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(58.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (user.avatar != null) {
-                    CircleAvatar(imageUrl = user.avatar)
-                } else {
-                    DefaultCircleAvatar(
-                        initials = "${user.lastName[0]}${user.firstName[0]}",
-                        size = 50,
-                        fontSize = 16
-                    )
-                }
-            }
-        }
+        Avatar(
+            size = 58,
+            avatarUrl = user.avatar,
+            initials = "${user.lastName[0]}${user.firstName[0]}",
+            isGold = user.isGold,
+            borderWidth = 2.dp,
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {

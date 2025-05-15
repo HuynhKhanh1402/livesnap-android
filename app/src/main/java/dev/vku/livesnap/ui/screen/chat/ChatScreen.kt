@@ -50,13 +50,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.vku.livesnap.domain.model.Message
 import dev.vku.livesnap.domain.model.Snap
+import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.home.FeedPhoto
 import dev.vku.livesnap.ui.screen.home.FeedPhotoFooter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,33 +84,17 @@ fun ChatScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (otherUser?.avatar != null) {
-                                AsyncImage(
-                                    model = otherUser?.avatar,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                val initials = otherUser?.let { 
-                                    "${it.firstName.firstOrNull() ?: ""}${it.lastName.firstOrNull() ?: ""}"
-                                }?.uppercase() ?: "?"
-                                Text(
-                                    text = initials,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
+                        Avatar(
+                            size = 40,
+                            avatarUrl = otherUser?.avatar,
+                            initials = otherUser?.let { 
+                                "${it.firstName.firstOrNull() ?: ""}${it.lastName.firstOrNull() ?: ""}"
+                            }?.uppercase(),
+                            isGold = otherUser?.isGold == true,
+                            borderWidth = 2.dp,
+                            fontSize = 18
+                        )
 
-                        // Name
                         Text(
                             text = otherUser?.let { "${it.firstName} ${it.lastName}" } ?: "Loading...",
                             style = MaterialTheme.typography.titleMedium
@@ -215,8 +199,10 @@ fun MessageItem(
                 FeedPhotoFooter(
                     isOwner = snap!!.isOwner,
                     avatar = snap!!.user.avatar,
-                    name = "${snap!!.user.firstName} ${snap!!.user.lastName}".trim(),
-                    createdAt = snap!!.createdAt
+                    lastName = snap!!.user.lastName,
+                    firstName = snap!!.user.firstName,
+                    createdAt = snap!!.createdAt,
+                    isGold = snap!!.user.isGold
                 )
             }
         }
