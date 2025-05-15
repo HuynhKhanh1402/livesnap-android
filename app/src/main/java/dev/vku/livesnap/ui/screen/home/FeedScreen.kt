@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -96,6 +99,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+data class FlyingEmoji(val id: Long = System.currentTimeMillis(), val emoji: String)
+
 
 @OptIn(ExperimentalSnapperApi::class, FlowPreview::class)
 @Composable
@@ -130,7 +135,6 @@ fun FeedScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val isFetchingCurrentSnap by viewModel.isFetchingCurrentSnap.collectAsState()
-
     LaunchedEffect(loadSnapResult) {
         when(loadSnapResult) {
             is LoadSnapResult.Error -> {
@@ -144,8 +148,6 @@ fun FeedScreen(
     LaunchedEffect(reactSnapResult) {
         when (reactSnapResult) {
             is LoadingResult.Success -> {
-                val emoji = (reactSnapResult as LoadingResult.Success).data
-                snackbarHostState.showSnackbar(emoji)
                 viewModel.resetReactSnapResult()
             }
             is LoadingResult.Error -> {
@@ -189,45 +191,46 @@ fun FeedScreen(
         }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxWidth(),
-        flingBehavior = flingBehavior
-    ) {
-        items(snaps) {snap ->
-            Feed(
-                snap = snap,
-                viewModel = viewModel,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(screenHeight),
-                isFetchingDetail = isFetchingCurrentSnap,
-                onProfileBtnClicked = onProfileBtnClicked,
-                onChatBtnClicked = onChatClick,
-                onDeleteBtnClicked = {
-                    viewModel.deleteSnap(snap.id, {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Delete snap successful!"   )
-                        }
-                    }, { error ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Error: $error")
-                        }
-                    })
-                },
-                onReact = { emoji ->
-                    viewModel.reactSnap(snap, emoji)
-                },
-                onSendMessage = {message ->
-                    viewModel.sendMessage(snap, message)
-                },
-                onNavigateToHome = onNavigateToHome
-            )
-        }
-
-        if (isLoading) {
-            item {
-                LoadingOverlay()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth(),
+            flingBehavior = flingBehavior
+        ) {
+            items(snaps) {snap ->
+                Feed(
+                    snap = snap,
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(screenHeight),
+                    isFetchingDetail = isFetchingCurrentSnap,
+                    onProfileBtnClicked = onProfileBtnClicked,
+                    onChatBtnClicked = onChatClick,
+                    onDeleteBtnClicked = {
+                        viewModel.deleteSnap(snap.id, {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Delete snap successful!"   )
+                            }
+                        }, { error ->
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Error: $error")
+                            }
+                        })
+                    },
+                    onReact = { emoji ->
+                        viewModel.reactSnap(snap, emoji)
+                    },
+                    onSendMessage = {message ->
+                        viewModel.sendMessage(snap, message)
+                    },
+                    onNavigateToHome = onNavigateToHome
+                )
+            }
+            if (isLoading) {
+                item {
+                    LoadingOverlay()
+                }
             }
         }
     }
@@ -287,6 +290,10 @@ fun Feed(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val minHeightDp = (screenHeightDp * 0.5).dp
 
+    val flyingEmojis = remember { mutableStateListOf<FlyingEmoji>() }
+
+
+
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
@@ -340,7 +347,10 @@ fun Feed(
                 )
             } else {
                 ReactionBar(
-                    onReact = onReact,
+                    onReact = { emoji ->
+                        onReact(emoji)
+                        flyingEmojis.add(FlyingEmoji(emoji = emoji))
+                    },
                     onSendMessage = onSendMessage
                 )
             }
@@ -377,7 +387,7 @@ fun Feed(
                 )
 
                 if (snap.isOwner) {
-                    Text("Delete", 
+                    Text("Delete",
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -390,7 +400,7 @@ fun Feed(
                     )
                 }
 
-                Text("Cancel", 
+                Text("Cancel",
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showDialog.value = false }
@@ -467,6 +477,14 @@ fun Feed(
             }
         }
     }
+
+    // Overlay emoji animation
+    FlyingEmojisOverlay(
+        emojis = flyingEmojis,
+        onAnimationEnd = { emoji -> flyingEmojis.remove(emoji) }
+    )
+
+
 }
 
 @Composable
@@ -908,9 +926,9 @@ fun ReactionBar(
                     ),
                     maxLines = 1
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 IconButton(
                     onClick = {
                         if (messageText.isNotBlank()) {
@@ -1310,6 +1328,36 @@ private fun formatTimeAgo(date: Date): String {
         else -> {
             val dateFormat = SimpleDateFormat("MMM dd yyyy", Locale.ENGLISH)
             dateFormat.format(date)
+        }
+    }
+}
+
+@Composable
+fun FlyingEmojisOverlay(
+    emojis: List<FlyingEmoji>,
+    onAnimationEnd: (FlyingEmoji) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {}
+    ) {
+        emojis.forEach { flyingEmoji ->
+            val animatable = remember { androidx.compose.animation.core.Animatable(0f) }
+            LaunchedEffect(flyingEmoji.id) {
+                animatable.animateTo(
+                    targetValue = -400f,
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 1200, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                )
+                onAnimationEnd(flyingEmoji)
+            }
+            Text(
+                text = flyingEmoji.emoji,
+                fontSize = 36.sp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = animatable.value.dp)
+            )
         }
     }
 }
