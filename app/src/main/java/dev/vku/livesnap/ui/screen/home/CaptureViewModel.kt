@@ -3,6 +3,9 @@ package dev.vku.livesnap.ui.screen.home
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
 import androidx.camera.core.CameraSelector
@@ -21,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -89,7 +93,57 @@ class CaptureViewModel @Inject constructor(
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    _capturedImageUri.value = Uri.fromFile(photoFile)
+                    viewModelScope.launch {
+                        try {
+                            // Load the captured image
+                            val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+                            
+                            // Calculate the target aspect ratio (400dp height / screen width)
+                            val screenWidth = context.resources.displayMetrics.widthPixels
+                            val targetHeight = (400 * context.resources.displayMetrics.density).toInt()
+                            val targetAspectRatio = screenWidth.toFloat() / targetHeight.toFloat()
+                            
+                            // Calculate the crop dimensions
+                            val imageWidth = bitmap.width
+                            val imageHeight = bitmap.height
+                            val imageAspectRatio = imageWidth.toFloat() / imageHeight.toFloat()
+                            
+                            val cropRect = if (imageAspectRatio > targetAspectRatio) {
+                                // Image is wider than target, crop width
+                                val newWidth = (imageHeight * targetAspectRatio).toInt()
+                                val left = (imageWidth - newWidth) / 2
+                                RectF(left.toFloat(), 0f, (left + newWidth).toFloat(), imageHeight.toFloat())
+                            } else {
+                                // Image is taller than target, crop height
+                                val newHeight = (imageWidth / targetAspectRatio).toInt()
+                                val top = (imageHeight - newHeight) / 2
+                                RectF(0f, top.toFloat(), imageWidth.toFloat(), (top + newHeight).toFloat())
+                            }
+                            
+                            // Create a new bitmap with the cropped dimensions
+                            val croppedBitmap = Bitmap.createBitmap(
+                                bitmap,
+                                cropRect.left.toInt(),
+                                cropRect.top.toInt(),
+                                cropRect.width().toInt(),
+                                cropRect.height().toInt()
+                            )
+                            
+                            // Save the cropped bitmap
+                            val outputStream = FileOutputStream(photoFile)
+                            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                            outputStream.close()
+                            
+                            // Clean up
+                            bitmap.recycle()
+                            croppedBitmap.recycle()
+                            
+                            _capturedImageUri.value = Uri.fromFile(photoFile)
+                        } catch (e: Exception) {
+                            Log.e("CaptureViewModel", "Error processing image: ${e.message}")
+                            _capturedImageUri.value = Uri.fromFile(photoFile)
+                        }
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
