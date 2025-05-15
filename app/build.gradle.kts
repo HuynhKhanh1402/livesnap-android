@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.firebase.functions.ktx)
+    implementation(libs.compose.emoji.picker)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

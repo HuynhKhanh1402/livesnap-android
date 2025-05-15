@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -80,6 +81,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.makeappssimple.abhimanyu.composeemojipicker.ComposeEmojiPickerBottomSheetUI
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import dev.vku.livesnap.LoadingOverlay
@@ -880,6 +882,7 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, lastName: String, firstNa
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReactionBar(
     onReact: (String) -> Unit,
@@ -887,6 +890,11 @@ fun ReactionBar(
 ) {
     var showMessageInput by remember { mutableStateOf(false) }
     var messageText by remember { mutableStateOf("") }
+    var showEmojiPicker by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
 
     Box(
         modifier = Modifier
@@ -1000,9 +1008,42 @@ fun ReactionBar(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier
                             .size(28.dp)
-                            .clickable(onClick = {})
+                            .clickable(onClick = { showEmojiPicker = true })
                     )
                 }
+            }
+        }
+    }
+
+    if (showEmojiPicker) {
+        ModalBottomSheet(
+            sheetState = sheetState,
+            shape = RectangleShape,
+            tonalElevation = 0.dp,
+            onDismissRequest = {
+                showEmojiPicker = false
+                searchText = ""
+            },
+            dragHandle = null,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+            ) {
+                ComposeEmojiPickerBottomSheetUI(
+                    onEmojiClick = { emoji ->
+                        showEmojiPicker = false
+                        onReact(emoji.character)
+                    },
+                    onEmojiLongClick = { emoji ->
+                        showEmojiPicker = false
+                        onReact(emoji.character)
+                    },
+                    searchText = searchText,
+                    updateSearchText = { updatedSearchText ->
+                        searchText = updatedSearchText
+                    },
+                )
             }
         }
     }
