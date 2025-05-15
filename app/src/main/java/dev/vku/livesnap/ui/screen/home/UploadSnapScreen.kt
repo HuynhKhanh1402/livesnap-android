@@ -84,9 +84,21 @@ fun UploadSnapScreen(
 
     var isSaved by remember { mutableStateOf(false) }
 
+    LaunchedEffect(imageUri) {
+        viewModel.loadBitmapFromUri(imageUri)
+    }
+
     LaunchedEffect(loadBitmapResult) {
-        if (loadBitmapResult is LoadBitmapResult.Idle) {
-            viewModel.loadBitmapFromUri(imageUri)
+        when (loadBitmapResult) {
+            is LoadBitmapResult.Success -> {
+                // Bitmap loaded successfully
+            }
+            is LoadBitmapResult.Error -> {
+                snackbarHostState.showSnackbar((loadBitmapResult as LoadBitmapResult.Error).message)
+            }
+            else -> {
+                // Idle state
+            }
         }
     }
 
@@ -150,7 +162,10 @@ fun UploadSnapScreen(
                     top = 32.dp,
                     bottom = 16.dp
                 ),
-            onBackButtonClicked = onBack,
+            onBackButtonClicked = {
+                viewModel.resetBitmapResult()
+                onBack()
+            },
             onUploadButtonClicked = {
                 viewModel.uploadSnap(imageUri)
             },

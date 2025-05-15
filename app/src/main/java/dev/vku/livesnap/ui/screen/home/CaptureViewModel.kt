@@ -196,5 +196,20 @@ class CaptureViewModel @Inject constructor(
         _capturedImageUri.value = null
         _galleryImageUri.value = null
         _fetchFriendCountResult.value = LoadingResult.Idle
+        imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up any remaining files
+        _capturedImageUri.value?.let { uri ->
+            if (uri.scheme == "file") {
+                try {
+                    File(uri.path ?: "").delete()
+                } catch (e: Exception) {
+                    Log.e("CaptureViewModel", "Error deleting file: ${e.message}")
+                }
+            }
+        }
     }
 }

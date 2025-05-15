@@ -58,6 +58,8 @@ class UploadSnapViewModel @Inject constructor(
 
     private val _isCaptionValid = MutableStateFlow(true)
 
+    private var currentBitmap: Bitmap? = null
+
     fun resetState() {
         // Reset all state flows
         _loadBitmapResult.value = LoadBitmapResult.Idle
@@ -66,6 +68,24 @@ class UploadSnapViewModel @Inject constructor(
         _loadingState.value = false
         _caption.value = ""
         _isCaptionValid.value = true
+    }
+
+    fun resetBitmapResult() {
+        currentBitmap?.recycle()
+        currentBitmap = null
+        _loadBitmapResult.value = LoadBitmapResult.Idle
+    }
+
+    fun clearBitmap() {
+        currentBitmap?.recycle()
+        currentBitmap = null
+        _loadBitmapResult.value = LoadBitmapResult.Idle
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        currentBitmap?.recycle()
+        currentBitmap = null
     }
 
     fun onCaptionChange(newCaption: String) {
@@ -81,8 +101,13 @@ class UploadSnapViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _loadingState.value = true
+                // Clear previous bitmap if exists
+                currentBitmap?.recycle()
+                currentBitmap = null
+
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val bitmap = BitmapFactory.decodeStream(inputStream)
+                currentBitmap = bitmap
                 _loadBitmapResult.value = LoadBitmapResult.Success(bitmap)
             } catch (e: Exception) {
                 Log.e("UploadSnapViewModel", "Error loading bitmap: ${e.message}")
