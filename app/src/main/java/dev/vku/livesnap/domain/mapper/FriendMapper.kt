@@ -11,6 +11,7 @@ fun FriendDTO.toDomain() = Friend(
     firstName = this.firstName,
     lastName = this.lastName,
     avatar = this.avatar,
+    isGold = this.isGold,
     friendSince = this.friendSince.convertToDate()
 )
 
@@ -20,6 +21,7 @@ fun Friend.toDTO() = FriendDTO(
     firstName = this.firstName,
     lastName = this.lastName,
     avatar = this.avatar,
+    isGold = this.isGold,
     friendSince = this.friendSince.convertToString()
 )
 

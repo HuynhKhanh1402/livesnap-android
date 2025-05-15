@@ -48,6 +48,9 @@ class CaptureViewModel @Inject constructor(
     private val _capturedImageUri = MutableStateFlow<Uri?>(null)
     val capturedImageUri: StateFlow<Uri?> = _capturedImageUri
 
+    private val _galleryImageUri = MutableStateFlow<Uri?>(null)
+    val galleryImageUri: StateFlow<Uri?> = _galleryImageUri
+
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
 
@@ -125,10 +128,19 @@ class CaptureViewModel @Inject constructor(
         _fetchFriendCountResult.value = LoadingResult.Idle
     }
 
+    fun openGallery(uri: Uri) {
+        _galleryImageUri.value = uri
+    }
+
+    fun resetGalleryImageUri() {
+        _galleryImageUri.value = null
+    }
+
     fun resetState() {
         _isFlashOn.value = false
         _lensFacing.value = CameraSelector.LENS_FACING_BACK
         _capturedImageUri.value = null
+        _galleryImageUri.value = null
         _fetchFriendCountResult.value = LoadingResult.Idle
     }
 }

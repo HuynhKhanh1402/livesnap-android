@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,7 +82,17 @@ fun CaptureScreen(
         viewModel.updateCameraPermission(granted)
     }
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            viewModel.openGallery(it)
+            onImageCaptured(it)
+        }
+    }
+
     val capturedImageUri by viewModel.capturedImageUri.collectAsState()
+    val galleryImageUri by viewModel.galleryImageUri.collectAsState()
 
     val fetchFriendCountResult by viewModel.fetchFriendCountResult.collectAsState()
     var friendCount = if (fetchFriendCountResult is LoadingResult.Success) (fetchFriendCountResult as LoadingResult.Success).data else 0
@@ -98,8 +109,17 @@ fun CaptureScreen(
 
     LaunchedEffect(capturedImageUri) {
         capturedImageUri?.let { uri ->
+            viewModel.resetGalleryImageUri()
             onImageCaptured(uri)
             viewModel.resetCapturedImageURI()
+        }
+    }
+
+    LaunchedEffect(galleryImageUri) {
+        galleryImageUri?.let { uri ->
+            viewModel.resetCapturedImageURI()
+            onImageCaptured(uri)
+            viewModel.resetGalleryImageUri()
         }
     }
 
@@ -133,16 +153,17 @@ fun CaptureScreen(
                 cameraProviderFuture = viewModel.cameraProviderFuture,
                 lifecycleOwner = lifecycleOwner,
                 preview = viewModel.preview,
-                imageCapture = viewModel.imageCapture
+                imageCapture = viewModel.imageCapture,
+                isFlashOn = isFlashOn,
+                onToggleFlash = viewModel::toggleFlash
             )
 
             Spacer(Modifier.height(48.dp))
 
             CaptureBottomBar(
-                isFlashOn = isFlashOn,
-                onToggleFlash = viewModel::toggleFlash,
                 onCameraFlip = viewModel::flipCamera,
-                onCapture = viewModel::takePhoto
+                onCapture = viewModel::takePhoto,
+                onGalleryClick = { galleryLauncher.launch("image/*") }
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -311,7 +332,9 @@ fun CameraPreview(
     cameraProviderFuture: ListenableFuture<ProcessCameraProvider>,
     lifecycleOwner: LifecycleOwner,
     preview: androidx.camera.core.Preview,
-    imageCapture: ImageCapture
+    imageCapture: ImageCapture,
+    isFlashOn: Boolean = false,
+    onToggleFlash: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -344,6 +367,29 @@ fun CameraPreview(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(percent = 12))
             )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+            ) {
+                IconButton(
+                    onClick = onToggleFlash,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FlashOn,
+                        contentDescription = "Flash",
+                        tint = if (isFlashOn) Color.Yellow else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         } else {
             Text(
                 text = "Cần quyền camera để sử dụng tính năng này.",
@@ -358,10 +404,9 @@ fun CameraPreview(
 
 @Composable
 fun CaptureBottomBar(
-    isFlashOn: Boolean = false,
-    onToggleFlash: () -> Unit = {},
     onCameraFlip: () -> Unit = {},
     onCapture: () -> Unit = {},
+    onGalleryClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -376,11 +421,11 @@ fun CaptureBottomBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onToggleFlash) {
+        IconButton(onClick = onGalleryClick) {
             Icon(
-                imageVector = Icons.Default.FlashOn,
-                contentDescription = "Flash",
-                tint = if (isFlashOn) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer,
+                imageVector = Icons.Default.Image,
+                contentDescription = "Gallery",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(64.dp)
             )
         }

@@ -8,7 +8,8 @@ fun UserDTO.toDomain() = User(
     username = this.username,
     firstName = this.firstName,
     lastName = this.lastName,
-    avatar = this.avatar
+    avatar = this.avatar,
+    isGold = this.isGold
 )
 
 fun User.toDTO() = UserDTO(
@@ -16,7 +17,8 @@ fun User.toDTO() = UserDTO(
     username = this.username,
     firstName = this.firstName,
     lastName = this.lastName,
-    avatar = this.avatar
+    avatar = this.avatar,
+    isGold = this.isGold
 )
 
 fun List<UserDTO>.toDomain(): List<User> = this.map { it.toDomain() }

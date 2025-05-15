@@ -5,5 +5,6 @@ data class UserDTO(
     val username: String,
     val firstName: String,
     val lastName: String,
-    val avatar: String?
+    val avatar: String?,
+    val isGold: Boolean
 )

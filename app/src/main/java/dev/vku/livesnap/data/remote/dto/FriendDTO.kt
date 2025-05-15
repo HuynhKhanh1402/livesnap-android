@@ -6,5 +6,6 @@ data class FriendDTO(
     val firstName: String,
     val lastName: String,
     val avatar: String?,
+    val isGold: Boolean,
     val friendSince: String
 )

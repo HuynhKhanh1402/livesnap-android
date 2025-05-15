@@ -8,5 +8,6 @@ data class Friend(
     val firstName: String,
     val lastName: String,
     val avatar: String?,
+    val isGold: Boolean,
     val friendSince: Date
 )
