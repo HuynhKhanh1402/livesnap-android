@@ -23,6 +23,7 @@ import dev.vku.livesnap.data.remote.dto.response.UploadSnapResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserListResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
+import dev.vku.livesnap.data.remote.dto.response.PaymentQRResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -136,4 +137,7 @@ interface ApiService {
 
     @PATCH("users/update-username")
     suspend fun updateUsername(@Body request: UpdateUsernameRequest): Response<DefaultResponse>
+
+    @GET("users/payment-qr")
+    suspend fun getPaymentQR(): Response<PaymentQRResponse>
 }

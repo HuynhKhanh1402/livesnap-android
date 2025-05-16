@@ -124,6 +124,23 @@ fun PremiumFeaturesScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Price
+            Text(
+                text = "Special Offer",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = goldColor,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "2,000 VND",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
             // Upgrade Button
             Button(
                 onClick = onUpgradeClick,

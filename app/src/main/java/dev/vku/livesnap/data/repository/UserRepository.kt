@@ -11,6 +11,7 @@ import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserListResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
+import dev.vku.livesnap.data.remote.dto.response.PaymentQRResponse
 import retrofit2.Response
 
 interface UsersRepository {
@@ -20,10 +21,11 @@ interface UsersRepository {
     suspend fun getUserById(userId: String): Response<UserDetailResponse>
     suspend fun updateName(firstName: String, lastName: String): Response<Unit>
     suspend fun searchUsers(username: String): Response<UserListResponse>
-    suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
-    suspend fun updateEmail(email: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
-    suspend fun updateFcmToken(fcmToken: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse>
+    suspend fun checkPassword(password: String): Response<DefaultResponse>
+    suspend fun updateEmail(email: String): Response<DefaultResponse>
+    suspend fun updateFcmToken(fcmToken: String): Response<DefaultResponse>
     suspend fun updateUsername(username: String): Response<DefaultResponse>
+    suspend fun getPaymentQR(): Response<PaymentQRResponse>
 }
 
 class DefaultUsersRepository(
@@ -56,19 +58,23 @@ class DefaultUsersRepository(
         return apiService.searchUsers(username)
     }
 
-    override suspend fun checkPassword(password: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
+    override suspend fun checkPassword(password: String): Response<DefaultResponse> {
         return apiService.checkPassword(dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest(password))
     }
 
-    override suspend fun updateEmail(email: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
+    override suspend fun updateEmail(email: String): Response<DefaultResponse> {
         return apiService.updateEmail(dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest(email))
     }
 
-    override suspend fun updateFcmToken(fcmToken: String): Response<dev.vku.livesnap.data.remote.dto.response.DefaultResponse> {
+    override suspend fun updateFcmToken(fcmToken: String): Response<DefaultResponse> {
         return apiService.updateFcmToken(UpdateFcmTokenRequest(fcmToken))
     }
 
     override suspend fun updateUsername(username: String): Response<DefaultResponse> {
         return apiService.updateUsername(UpdateUsernameRequest(username))
+    }
+
+    override suspend fun getPaymentQR(): Response<PaymentQRResponse> {
+        return apiService.getPaymentQR()
     }
 }

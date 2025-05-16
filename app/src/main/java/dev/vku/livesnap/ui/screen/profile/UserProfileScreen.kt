@@ -94,6 +94,7 @@ fun UserProfileScreen(
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showChangeEmailDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showGoldMemberDialog by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var showPasswordError by remember { mutableStateOf(false) }
@@ -223,7 +224,13 @@ fun UserProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .clickable(onClick = onPremiumFeaturesClick),
+                        .clickable(onClick = {
+                            if (user?.isGold == true) {
+                                showGoldMemberDialog = true
+                            } else {
+                                onPremiumFeaturesClick()
+                            }
+                        }),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -235,7 +242,7 @@ fun UserProfileScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Upgrade LiveSnap Gold",
+                        text = if (user?.isGold == true) "Gold Member" else "Upgrade LiveSnap Gold",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF8B4513)
@@ -559,6 +566,36 @@ fun UserProfileScreen(
                     enabled = logoutUiState !is LogoutUiState.Loading
                 ) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Gold Member Dialog
+    if (showGoldMemberDialog) {
+        AlertDialog(
+            onDismissRequest = { showGoldMemberDialog = false },
+            title = {
+                Text(
+                    text = "Gold Member",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Text(
+                    text = "You are already a Gold member! Enjoy all premium features.",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showGoldMemberDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text("OK")
                 }
             }
         )

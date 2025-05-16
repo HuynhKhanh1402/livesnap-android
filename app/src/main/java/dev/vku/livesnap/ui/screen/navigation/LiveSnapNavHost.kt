@@ -1,6 +1,8 @@
 package dev.vku.livesnap.ui.screen.navigation
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -59,7 +61,10 @@ import dev.vku.livesnap.ui.screen.premium.PremiumFeaturesScreen
 import dev.vku.livesnap.ui.screen.profile.UserProfileDestination
 import dev.vku.livesnap.ui.screen.profile.UserProfileScreen
 import dev.vku.livesnap.ui.screen.profile.UserProfileViewModel
+import dev.vku.livesnap.ui.screen.checkout.CheckoutDestination
+import dev.vku.livesnap.ui.screen.checkout.CheckoutScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LiveSnapNavHost(
     navController: NavHostController,
@@ -80,20 +85,25 @@ fun LiveSnapNavHost(
 
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
+    // Function to reset all ViewModels
+    fun resetAllViewModels() {
+        userProfileViewModel.viewModelResetManager.resetAllViewModels(
+            loginViewModel = loginViewModel,
+            registrationViewModel = registrationViewModel,
+            captureViewModel = captureViewModel,
+            feedViewModel = feedViewModel,
+            friendModalViewModel = friendModalViewModel,
+            uploadSnapViewModel = uploadSnapViewModel,
+            userProfileViewModel = userProfileViewModel
+        )
+    }
+
     // Check token when NavHost is created
     LaunchedEffect(Unit) {
         val token = authSelectViewModel.tokenManager.getToken()
         if (token == null || token.isEmpty()) {
             // Reset all ViewModels before navigating to auth screen
-            userProfileViewModel.viewModelResetManager.resetAllViewModels(
-                loginViewModel = loginViewModel,
-                registrationViewModel = registrationViewModel,
-                captureViewModel = captureViewModel,
-                feedViewModel = feedViewModel,
-                friendModalViewModel = friendModalViewModel,
-                uploadSnapViewModel = uploadSnapViewModel,
-                userProfileViewModel = userProfileViewModel
-            )
+            resetAllViewModels()
             navController.navigate(AuthSelectDestination.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -119,15 +129,7 @@ fun LiveSnapNavHost(
                 TextButton(onClick = {
                     authSelectViewModel.clearToken()
                     // Reset all ViewModels before navigating to auth screen
-                    userProfileViewModel.viewModelResetManager.resetAllViewModels(
-                        loginViewModel = loginViewModel,
-                        registrationViewModel = registrationViewModel,
-                        captureViewModel = captureViewModel,
-                        feedViewModel = feedViewModel,
-                        friendModalViewModel = friendModalViewModel,
-                        uploadSnapViewModel = uploadSnapViewModel,
-                        userProfileViewModel = userProfileViewModel
-                    )
+                    resetAllViewModels()
                     showSessionExpiredDialog = false
                     navController.navigate(AuthSelectDestination.route) {
                         popUpTo(0) { inclusive = true }
@@ -261,15 +263,7 @@ fun LiveSnapNavHost(
                         navController.navigate(AuthSelectDestination.route) {
                             popUpTo(0) { inclusive = true }
                         }
-                        userProfileViewModel.viewModelResetManager.resetAllViewModels(
-                            loginViewModel = loginViewModel,
-                            registrationViewModel = registrationViewModel,
-                            captureViewModel = captureViewModel,
-                            feedViewModel = feedViewModel,
-                            friendModalViewModel = friendModalViewModel,
-                            uploadSnapViewModel = uploadSnapViewModel,
-                            userProfileViewModel = userProfileViewModel
-                        )
+                        resetAllViewModels()
                     },
                     onPremiumFeaturesClick = {
                         navController.navigate(PremiumFeaturesDestination.route)
@@ -280,11 +274,24 @@ fun LiveSnapNavHost(
             composable(route = PremiumFeaturesDestination.route) {
                 PremiumFeaturesScreen(
                     onUpgradeClick = {
-                        // TODO: Implement upgrade functionality
-                        navController.popBackStack()
+                        navController.navigate(CheckoutDestination.route)
                     },
                     onDismiss = {
                         navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(route = CheckoutDestination.route) {
+                CheckoutScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onUpgradeSuccess = {
+                        resetAllViewModels()
+                        navController.navigate(HomeDestination.route) {
+                            popUpTo(HomeDestination.route) { inclusive = true }
+                        }
                     }
                 )
             }
