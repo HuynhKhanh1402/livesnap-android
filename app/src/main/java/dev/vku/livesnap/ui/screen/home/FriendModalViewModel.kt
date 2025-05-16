@@ -219,12 +219,12 @@ class FriendModalViewModel @Inject constructor(
         fetchFriendList()
     }
 
-    fun rejectFriendRequest(requestId: String) {
+    fun rejectFriendRequest(userId: String) {
         viewModelScope.launch {
-            rejectingRequestId = requestId
+            rejectingRequestId = userId
             _rejectFriendRequestResult.value = LoadingResult.Loading
             try {
-                val response = friendRepository.rejectFriendRequest(requestId)
+                val response = friendRepository.rejectFriendRequest(userId)
                 if (response.isSuccessful && response.body()?.code == 200) {
                     _rejectFriendRequestResult.value = LoadingResult.Success(Unit)
                 } else {

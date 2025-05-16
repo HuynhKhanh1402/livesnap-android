@@ -59,21 +59,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
 import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.domain.model.FriendRequest
 import dev.vku.livesnap.domain.model.User
+import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.util.LoadingResult
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,7 +155,7 @@ fun FriendModal(
                     isRejecting = rejectFriendRequestResult is LoadingResult.Loading,
                     rejectingRequestId = viewModel.rejectingRequestId,
                     onReject = { request ->
-                        viewModel.rejectFriendRequest(request.id)
+                        viewModel.rejectFriendRequest(request.user.id)
                     }
                 )
             }
@@ -481,56 +477,15 @@ fun SearchUserResult(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = Color.Gray,
-                            shape = CircleShape
-                        )
-                        .size(64.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = CircleShape
-                            )
-                            .size(60.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = CircleShape
-                                )
-                                .size(56.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (user.avatar != null) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context = LocalContext.current)
-                                        .crossfade(false)
-                                        .data(user.avatar)
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                )
-                            } else {
-                                Text(
-                                    text = "${user.lastName[0]}${user.firstName[0]}",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
+                Avatar(
+                    size = 64,
+                    borderColor = Color.Gray,
+                    avatarUrl = user.avatar,
+                    initials = "${user.lastName[0]}${user.firstName[0]}",
+                    isGold = user.isGold,
+                    borderWidth = 3.dp,
+                    fontSize = 28
+                )
 
                 Column(
                     modifier = Modifier
@@ -624,56 +579,15 @@ fun InComingFriendRequest(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = Color.Gray,
-                                    shape = CircleShape
-                                )
-                                .size(64.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shape = CircleShape
-                                    )
-                                    .size(60.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            shape = CircleShape
-                                        )
-                                        .size(56.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (user.avatar != null) {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(context = LocalContext.current)
-                                                .crossfade(false)
-                                                .data(user.avatar)
-                                                .build(),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = modifier
-                                                .fillMaxSize()
-                                                .clip(CircleShape)
-                                        )
-                                    } else {
-                                        Text(
-                                            text = "${user.lastName[0]}${user.firstName[0]}",
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            fontSize = 24.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        Avatar(
+                            size = 64,
+                            borderColor = Color.Gray,
+                            avatarUrl = user.avatar,
+                            initials = "${user.lastName[0]}${user.firstName[0]}",
+                            isGold = user.isGold,
+                            borderWidth = 3.dp,
+                            fontSize = 28
+                        )
 
                         Column(
                             modifier = Modifier
@@ -862,56 +776,14 @@ fun FriendList(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = CircleShape
-                        )
-                        .size(64.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = CircleShape
-                            )
-                            .size(60.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = CircleShape
-                                )
-                                .size(56.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (friend.avatar != null) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context = LocalContext.current)
-                                        .crossfade(false)
-                                        .data(friend.avatar)
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                )
-                            } else {
-                                Text(
-                                    text = "${friend.lastName[0]}${friend.firstName[0]}",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
+                Avatar(
+                    size = 64,
+                    avatarUrl = friend.avatar,
+                    initials = "${friend.lastName[0]}${friend.firstName[0]}",
+                    isGold = friend.isGold,
+                    borderWidth = 3.dp,
+                    fontSize = 28
+                )
 
                 Column(
                     modifier = Modifier
@@ -1095,56 +967,15 @@ fun SentFriendRequest(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = Color.Gray,
-                                shape = CircleShape
-                            )
-                            .size(64.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = CircleShape
-                                )
-                                .size(60.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        shape = CircleShape
-                                    )
-                                    .size(56.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (user.avatar != null) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context = LocalContext.current)
-                                            .crossfade(false)
-                                            .data(user.avatar)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                    )
-                                } else {
-                                    Text(
-                                        text = "${user.lastName[0]}${user.firstName[0]}",
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    Avatar(
+                        size = 64,
+                        borderColor = Color.Gray,
+                        avatarUrl = user.avatar,
+                        initials = "${user.lastName[0]}${user.firstName[0]}",
+                        isGold = user.isGold,
+                        borderWidth = 3.dp,
+                        fontSize = 28
+                    )
 
                     Column(
                         modifier = Modifier
@@ -1221,56 +1052,15 @@ fun SuggestionFriendsList(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = Color.Gray,
-                            shape = CircleShape
-                        )
-                        .size(64.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = CircleShape
-                            )
-                            .size(60.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = CircleShape
-                                )
-                                .size(56.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (user.avatar != null) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context = LocalContext.current)
-                                        .crossfade(false)
-                                        .data(user.avatar)
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                )
-                            } else {
-                                Text(
-                                    text = "${user.lastName[0]}${user.firstName[0]}",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
+                Avatar(
+                    size = 64,
+                    borderColor = Color.Gray,
+                    avatarUrl = user.avatar,
+                    initials = "${user.lastName[0]}${user.firstName[0]}",
+                    isGold = user.isGold,
+                    borderWidth = 3.dp,
+                    fontSize = 28
+                )
 
                 Column(
                     modifier = Modifier
