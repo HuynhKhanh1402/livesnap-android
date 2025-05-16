@@ -23,7 +23,8 @@ fun HomeScreen(
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit,
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    onPremiumFeaturesClick: () -> Unit
 ) {
     val pagerState = rememberPagerState(
         pageCount = { 2 }
@@ -42,6 +43,7 @@ fun HomeScreen(
                 snackbarHostState = snackbarHostState,
                 onChatBtnClicked = onChatClick,
                 onImageCaptured = onImageCaptured,
+                onPremiumFeaturesClick = onPremiumFeaturesClick
             )
             1 -> FeedScreen(
                 viewModel = feedViewModel,
@@ -52,7 +54,8 @@ fun HomeScreen(
                     coroutineScope.launch {
                         pagerState.scrollToPage(0)
                     }
-                }
+                },
+                openPremiumFeaturesScreen = onPremiumFeaturesClick
             )
         }
     }

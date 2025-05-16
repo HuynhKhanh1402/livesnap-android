@@ -223,6 +223,9 @@ fun LiveSnapNavHost(
                     },
                     onChatClick = {
                         navController.navigate(ChatListDestination.route)
+                    },
+                    onPremiumFeaturesClick = {
+                        navController.navigate(PremiumFeaturesDestination.route)
                     }
                 )
             }

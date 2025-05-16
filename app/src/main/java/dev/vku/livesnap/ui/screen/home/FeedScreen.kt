@@ -111,11 +111,13 @@ fun FeedScreen(
     snackbarHostState: SnackbarHostState,
     onProfileBtnClicked: () -> Unit,
     onChatClick: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {},
+    openPremiumFeaturesScreen: () -> Unit = {}
 ) {
     val loadSnapResult by viewModel.loadSnapResult.collectAsState()
     val reactSnapResult by viewModel.reactSnapResult.collectAsState()
     val sendMessageResult by viewModel.sendMessageResult.collectAsState()
+    val isGoldResult by viewModel.isGold.collectAsState()
 
     val snaps = viewModel.snaps
     val isLoading = viewModel.isLoading
@@ -137,6 +139,17 @@ fun FeedScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val isFetchingCurrentSnap by viewModel.isFetchingCurrentSnap.collectAsState()
+
+    LaunchedEffect(isGoldResult) {
+        when (isGoldResult) {
+            is LoadingResult.Error -> {
+                snackbarHostState.showSnackbar((isGoldResult as LoadingResult.Error).message)
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
+
     LaunchedEffect(loadSnapResult) {
         when(loadSnapResult) {
             is LoadSnapResult.Error -> {
@@ -207,12 +220,13 @@ fun FeedScreen(
                         .fillMaxWidth()
                         .height(screenHeight),
                     isFetchingDetail = isFetchingCurrentSnap,
+                    isGold = isGoldResult is LoadingResult.Success && (isGoldResult as LoadingResult.Success).data,
                     onProfileBtnClicked = onProfileBtnClicked,
                     onChatBtnClicked = onChatClick,
                     onDeleteBtnClicked = {
                         viewModel.deleteSnap(snap.id, {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Delete snap successful!"   )
+                                snackbarHostState.showSnackbar("Delete snap successful!")
                             }
                         }, { error ->
                             coroutineScope.launch {
@@ -226,7 +240,8 @@ fun FeedScreen(
                     onSendMessage = {message ->
                         viewModel.sendMessage(snap, message)
                     },
-                    onNavigateToHome = onNavigateToHome
+                    onNavigateToHome = onNavigateToHome,
+                    openPremiumFeaturesScreen = openPremiumFeaturesScreen
                 )
             }
             if (isLoading) {
@@ -277,12 +292,14 @@ fun Feed(
     modifier: Modifier = Modifier,
     snap: Snap,
     isFetchingDetail: Boolean,
+    isGold: Boolean,
     onProfileBtnClicked: () -> Unit,
     onChatBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
     onReact: (String) -> Unit,
     onSendMessage: (String) -> Unit,
-    onNavigateToHome: () -> Unit
+    onNavigateToHome: () -> Unit,
+    openPremiumFeaturesScreen: () -> Unit
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
@@ -355,7 +372,9 @@ fun Feed(
                         onReact(emoji)
                         flyingEmojis.add(FlyingEmoji(emoji = emoji))
                     },
-                    onSendMessage = onSendMessage
+                    onSendMessage = onSendMessage,
+                    isGold = isGold,
+                    openPremiumFeaturesScreen = openPremiumFeaturesScreen
                 )
             }
 
@@ -886,7 +905,9 @@ fun FeedPhotoFooter(isOwner: Boolean, avatar: String?, lastName: String, firstNa
 @Composable
 fun ReactionBar(
     onReact: (String) -> Unit,
-    onSendMessage: (String) -> Unit
+    onSendMessage: (String) -> Unit,
+    isGold: Boolean,
+    openPremiumFeaturesScreen: () -> Unit
 ) {
     var showMessageInput by remember { mutableStateOf(false) }
     var messageText by remember { mutableStateOf("") }
@@ -1008,7 +1029,15 @@ fun ReactionBar(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier
                             .size(28.dp)
-                            .clickable(onClick = { showEmojiPicker = true })
+                            .clickable(
+                                onClick = {
+                                    if (!isGold) {
+                                        openPremiumFeaturesScreen()
+                                    } else {
+                                        showEmojiPicker = true
+                                    }
+                                }
+                            )
                     )
                 }
             }

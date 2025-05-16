@@ -19,6 +19,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.vku.livesnap.data.repository.FriendRepository
+import dev.vku.livesnap.data.repository.UsersRepository
+import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.ui.util.LoadingResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +32,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val friendRepository: FriendRepository
+    private val friendRepository: FriendRepository,
+    private val userRepository: UsersRepository
 ) : ViewModel() {
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission: StateFlow<Boolean> = _hasCameraPermission
@@ -40,6 +43,9 @@ class CaptureViewModel @Inject constructor(
 
     private val _lensFacing = MutableStateFlow(CameraSelector.LENS_FACING_BACK)
     val lensFacing: StateFlow<Int> = _lensFacing
+
+    private val _isGold = MutableStateFlow(false)
+    val isGold: StateFlow<Boolean> = _isGold
 
     val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
         ProcessCameraProvider.getInstance(context)
@@ -57,6 +63,24 @@ class CaptureViewModel @Inject constructor(
 
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
+
+    init {
+        fetchUserPremiumStatus()
+    }
+
+    private fun fetchUserPremiumStatus() {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.fetchUserDetail()
+                if (response.isSuccessful) {
+                    val user = response.body()?.data?.user?.toDomain()
+                    _isGold.value = user?.isGold == true
+                }
+            } catch (e: Exception) {
+                Log.e("CaptureViewModel", "Error fetching user premium status: ${e.message}", e)
+            }
+        }
+    }
 
     fun checkCameraPermission() {
         _hasCameraPermission.value = ContextCompat.checkSelfPermission(

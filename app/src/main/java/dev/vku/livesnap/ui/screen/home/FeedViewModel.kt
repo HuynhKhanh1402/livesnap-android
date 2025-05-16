@@ -12,6 +12,7 @@ import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.SnapRepository
 import dev.vku.livesnap.data.repository.FirebaseMessageRepository
 import dev.vku.livesnap.data.repository.FriendRepository
+import dev.vku.livesnap.data.repository.UsersRepository
 import dev.vku.livesnap.domain.mapper.toDomain
 import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
@@ -33,7 +34,8 @@ class FeedViewModel @Inject constructor(
     val snapRepository: SnapRepository,
     private val firebaseMessageRepository: FirebaseMessageRepository,
     private val friendRepository: FriendRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UsersRepository
 ) : ViewModel() {
     private var _loadSnapResult = MutableStateFlow<LoadSnapResult>(LoadSnapResult.Idle)
     var loadSnapResult: StateFlow<LoadSnapResult> = _loadSnapResult
@@ -68,6 +70,33 @@ class FeedViewModel @Inject constructor(
     var filterDisplayText = MutableStateFlow<String?>("Everyone")
         private set
 
+    private var _isGold = MutableStateFlow<LoadingResult<Boolean>>(LoadingResult.Idle)
+    val isGold: StateFlow<LoadingResult<Boolean>> = _isGold
+
+    init {
+        fetchUserPremiumStatus()
+    }
+
+    private fun fetchUserPremiumStatus() {
+        if (_isGold.value is LoadingResult.Idle) {
+            viewModelScope.launch {
+                try {
+                    _isGold.value = LoadingResult.Loading
+                    val response = userRepository.fetchUserDetail()
+                    if (response.isSuccessful) {
+                        val user = response.body()?.data?.user?.toDomain()
+                        _isGold.value = LoadingResult.Success(user?.isGold ?: false)
+                    } else {
+                        _isGold.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
+                    }
+                } catch (e: Exception) {
+                    Log.e("FeedViewModel", "Error fetching user premium status: ${e.message}", e)
+                    _isGold.value = LoadingResult.Error(e.message ?: "Unknown error")
+                }
+            }
+        }
+    }
+
     fun resetState() {
         // Reset all state flows
         _loadSnapResult.value = LoadSnapResult.Idle
@@ -75,6 +104,7 @@ class FeedViewModel @Inject constructor(
         _sendMessageResult.value = LoadingResult.Idle
         _isFetchingCurrentSnap.value = false
         _friendsListResult.value = LoadingResult.Idle
+        _isGold.value = LoadingResult.Idle
 
         // Reset all mutable state variables
         snaps = emptyList()

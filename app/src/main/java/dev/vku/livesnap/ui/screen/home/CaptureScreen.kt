@@ -69,12 +69,14 @@ fun CaptureScreen(
     onProfileBtnClicked: () -> Unit,
     onChatBtnClicked: () -> Unit,
     onImageCaptured: (Uri) -> Unit,
+    onPremiumFeaturesClick: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val hasCameraPermission by viewModel.hasCameraPermission.collectAsState()
     val isFlashOn by viewModel.isFlashOn.collectAsState()
     val lensFacing by viewModel.lensFacing.collectAsState()
+    val isGold by viewModel.isGold.collectAsState()
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -163,7 +165,13 @@ fun CaptureScreen(
             CaptureBottomBar(
                 onCameraFlip = viewModel::flipCamera,
                 onCapture = viewModel::takePhoto,
-                onGalleryClick = { galleryLauncher.launch("image/*") }
+                onGalleryClick = { 
+                    if (!isGold) {
+                        onPremiumFeaturesClick()
+                    } else {
+                        galleryLauncher.launch("image/*")
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.weight(1f))
