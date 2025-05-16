@@ -3,8 +3,6 @@ name: Android Build & Deploy
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 jobs:
@@ -21,20 +19,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Decode google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+
       - name: Grant execute permission for gradlew
-        run: |
-          chmod +x gradlew
-          ls -la gradlew
+        run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: |
-          ./gradlew assembleDebug --stacktrace --info
-        continue-on-error: true
-
-      - name: Check build output
-        run: |
-          echo "Checking build output directory:"
-          ls -la app/build/outputs/apk/debug/ || echo "Build directory not found"
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --info
 
       - name: Upload APK as Artifact
         if: success()
