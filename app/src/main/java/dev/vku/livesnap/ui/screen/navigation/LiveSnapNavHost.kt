@@ -42,6 +42,7 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUsernameScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationViewModel
+import dev.vku.livesnap.ui.screen.chat.ChatDestination
 import dev.vku.livesnap.ui.screen.chat.ChatListDestination
 import dev.vku.livesnap.ui.screen.chat.ChatListScreen
 import dev.vku.livesnap.ui.screen.chat.ChatScreen
@@ -53,6 +54,8 @@ import dev.vku.livesnap.ui.screen.home.HomeScreen
 import dev.vku.livesnap.ui.screen.home.UploadSnapDestination
 import dev.vku.livesnap.ui.screen.home.UploadSnapScreen
 import dev.vku.livesnap.ui.screen.home.UploadSnapViewModel
+import dev.vku.livesnap.ui.screen.premium.PremiumFeaturesDestination
+import dev.vku.livesnap.ui.screen.premium.PremiumFeaturesScreen
 import dev.vku.livesnap.ui.screen.profile.UserProfileDestination
 import dev.vku.livesnap.ui.screen.profile.UserProfileScreen
 import dev.vku.livesnap.ui.screen.profile.UserProfileViewModel
@@ -264,6 +267,21 @@ fun LiveSnapNavHost(
                             uploadSnapViewModel = uploadSnapViewModel,
                             userProfileViewModel = userProfileViewModel
                         )
+                    },
+                    onPremiumFeaturesClick = {
+                        navController.navigate(PremiumFeaturesDestination.route)
+                    }
+                )
+            }
+
+            composable(route = PremiumFeaturesDestination.route) {
+                PremiumFeaturesScreen(
+                    onUpgradeClick = {
+                        // TODO: Implement upgrade functionality
+                        navController.popBackStack()
+                    },
+                    onDismiss = {
+                        navController.popBackStack()
                     }
                 )
             }

@@ -3,7 +3,9 @@ package dev.vku.livesnap.ui.screen.profile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,6 +57,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -75,7 +79,8 @@ object UserProfileDestination : NavigationDestination {
 fun UserProfileScreen(
     viewModel: UserProfileViewModel,
     snackbarHostState: SnackbarHostState,
-    onLoggedOut: () -> Unit
+    onLoggedOut: () -> Unit,
+    onPremiumFeaturesClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -181,6 +186,64 @@ fun UserProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
             InviteCard(user!!)
             Spacer(modifier = Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xFFFFD700),
+                                    Color(0xFFFFC107),
+                                    Color(0xFFFFB300)
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .border(
+                            width = 2.dp,
+                            color = Color(0xFFFFD700),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clickable(onClick = onPremiumFeaturesClick),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color(0xFF8B4513)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Upgrade LiveSnap Gold",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF8B4513)
+                    )
+                }
+            }
+
+
             GeneralSection(
                 onChangeEmailClick = { showChangeEmailDialog = true }
             )

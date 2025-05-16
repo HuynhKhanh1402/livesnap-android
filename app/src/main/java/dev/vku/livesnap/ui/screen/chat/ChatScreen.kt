@@ -53,10 +53,16 @@ import dev.vku.livesnap.domain.model.Snap
 import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.home.FeedPhoto
 import dev.vku.livesnap.ui.screen.home.FeedPhotoFooter
+import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+object ChatDestination : NavigationDestination {
+    override val route = "chat/{chatId}"
+    fun createNavigationRoute(chatId: String) = "chat/$chatId"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
