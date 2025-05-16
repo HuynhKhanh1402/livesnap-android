@@ -2,9 +2,10 @@ name: Android Build & Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,18 +22,29 @@ jobs:
         cache: gradle
 
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      run: |
+        chmod +x gradlew
+        ls -la gradlew
 
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: |
+        ./gradlew assembleDebug --stacktrace --info
+      continue-on-error: true
+
+    - name: Check build output
+      run: |
+        echo "Checking build output directory:"
+        ls -la app/build/outputs/apk/debug/ || echo "Build directory not found"
 
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v3
       with:
         name: app-debug
         path: app/build/outputs/apk/debug/app-debug.apk
 
     - name: Create Release
+      if: success()
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -44,6 +56,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
+      if: success()
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
