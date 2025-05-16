@@ -13,9 +13,9 @@ interface FriendRepository {
     suspend fun fetchIncomingRequestList(): Response<FriendRequestListResponse>
     suspend fun fetchOutgoingRequestList(): Response<FriendRequestListResponse>
     suspend fun acceptFriendRequest(requestId: String): Response<DefaultResponse>
-    suspend fun rejectFriendRequest(requestId: String): Response<DefaultResponse>
+    suspend fun rejectFriendRequest(userId: String): Response<DefaultResponse>
     suspend fun removeFriend(friendId: String): Response<DefaultResponse>
-    suspend fun cancelFriendRequest(requestId: String): Response<DefaultResponse>
+    suspend fun cancelFriendRequest(userId: String): Response<DefaultResponse>
     suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO>
 }
 
@@ -45,16 +45,16 @@ class DefaultFriendRepository(
         return apiService.acceptFriendRequest(requestId)
     }
 
-    override suspend fun rejectFriendRequest(requestId: String): Response<DefaultResponse> {
-        return apiService.rejectFriendRequest(requestId)
+    override suspend fun rejectFriendRequest(userId: String): Response<DefaultResponse> {
+        return apiService.rejectFriendRequest(userId)
     }
 
     override suspend fun removeFriend(friendId: String): Response<DefaultResponse> {
         return apiService.removeFriend(friendId)
     }
 
-    override suspend fun cancelFriendRequest(requestId: String): Response<DefaultResponse> {
-        return apiService.cancelFriendRequest(requestId)
+    override suspend fun cancelFriendRequest(userId: String): Response<DefaultResponse> {
+        return apiService.cancelFriendRequest(userId)
     }
 
     override suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO> {

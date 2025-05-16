@@ -110,14 +110,14 @@ interface ApiService {
     @POST("friends/accept/{requestId}")
     suspend fun acceptFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
 
-    @POST("fiends/reject/{requestId}")
-    suspend fun rejectFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+    @POST("fiends/reject/{userId}")
+    suspend fun rejectFriendRequest(@Path("userId") userId: String): Response<DefaultResponse>
 
     @DELETE("friends/remove/{userId}")
     suspend fun removeFriend(@Path("userId") userId: String): Response<DefaultResponse>
 
-    @DELETE("friends/cancel-request/{requestId}")
-    suspend fun cancelFriendRequest(@Path("requestId") requestId: String): Response<DefaultResponse>
+    @DELETE("friends/cancel-request/{userId}")
+    suspend fun cancelFriendRequest(@Path("userId") userId: String): Response<DefaultResponse>
 
     @GET("friends/suggestions")
     suspend fun fetchFriendSuggestions(): Response<FriendSuggestionListDTO>
