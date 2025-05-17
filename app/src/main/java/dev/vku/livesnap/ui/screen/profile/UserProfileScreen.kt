@@ -111,7 +111,8 @@ fun UserProfileScreen(
     var showEmailError by remember { mutableStateOf(false) }
     val changeEmailUiState by viewModel.changeEmailUiState.collectAsState()
     var showAccountVisibilityDialog by remember { mutableStateOf(false) }
-    var isAccountVisible by remember { mutableStateOf(true) } // default: hiển thị
+    var isAccountVisible by remember { mutableStateOf(user?.isVisible ?: true) }
+    var isVisibilityLoading by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -811,10 +812,17 @@ fun UserProfileScreen(
                         text = "Allow friends to add me by username",
                         modifier = Modifier.weight(1f)
                     )
-                    androidx.compose.material3.Switch(
-                        checked = isAccountVisible,
-                        onCheckedChange = { isAccountVisible = it }
-                    )
+                    if (isVisibilityLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        androidx.compose.material3.Switch(
+                            checked = isAccountVisible,
+                            onCheckedChange = { checked ->
+                                isVisibilityLoading = true
+                                viewModel.updateVisibility(checked)
+                            }
+                        )
+                    }
                 }
                 Text(
                     text = if (isAccountVisible) {
@@ -835,6 +843,28 @@ fun UserProfileScreen(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+    }
+
+    // Lắng nghe kết quả update visibility từ ViewModel
+    val updateVisibilityUiState by viewModel.updateVisibilityUiState.collectAsState()
+    LaunchedEffect(updateVisibilityUiState) {
+        when (updateVisibilityUiState) {
+            is UpdateVisibilityUiState.Success -> {
+                isAccountVisible = (updateVisibilityUiState as UpdateVisibilityUiState.Success).isVisible
+                isVisibilityLoading = false
+                snackbarHostState.showSnackbar("Account visibility updated successfully.")
+                viewModel.resetUpdateVisibilityUiState()
+            }
+            is UpdateVisibilityUiState.Error -> {
+                isVisibilityLoading = false
+                snackbarHostState.showSnackbar((updateVisibilityUiState as UpdateVisibilityUiState.Error).message)
+                viewModel.resetUpdateVisibilityUiState()
+            }
+            is UpdateVisibilityUiState.Loading -> {
+                isVisibilityLoading = true
+            }
+            else -> {}
         }
     }
 }

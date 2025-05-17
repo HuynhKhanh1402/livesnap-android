@@ -85,6 +85,13 @@ sealed class FeedbackHistoryUiState {
     data class Error(val error: String) : FeedbackHistoryUiState()
 }
 
+sealed class UpdateVisibilityUiState {
+    object Idle : UpdateVisibilityUiState()
+    object Loading : UpdateVisibilityUiState()
+    data class Success(val isVisible: Boolean) : UpdateVisibilityUiState()
+    data class Error(val message: String) : UpdateVisibilityUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -121,6 +128,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _feedbackHistoryUiState = MutableStateFlow<FeedbackHistoryUiState>(FeedbackHistoryUiState.Idle)
     val feedbackHistoryUiState: StateFlow<FeedbackHistoryUiState> = _feedbackHistoryUiState
+
+    private val _updateVisibilityUiState = MutableStateFlow<UpdateVisibilityUiState>(UpdateVisibilityUiState.Idle)
+    val updateVisibilityUiState: StateFlow<UpdateVisibilityUiState> = _updateVisibilityUiState
 
     fun resetState() {
         _fetchUserResult.value = FetchUserResult.Idle
@@ -350,5 +360,26 @@ class UserProfileViewModel @Inject constructor(
 
     fun resetFeedbackHistoryUiState() {
         _feedbackHistoryUiState.value = FeedbackHistoryUiState.Idle
+    }
+
+    fun updateVisibility(visible: Boolean) {
+        viewModelScope.launch {
+            _updateVisibilityUiState.value = UpdateVisibilityUiState.Loading
+            try {
+                val response = userRepository.updateVisibility(visible)
+                if (response.isSuccessful) {
+                    _updateVisibilityUiState.value = UpdateVisibilityUiState.Success(visible)
+                    fetchUser()
+                } else {
+                    _updateVisibilityUiState.value = UpdateVisibilityUiState.Error(response.message() ?: "Failed to update visibility")
+                }
+            } catch (e: Exception) {
+                _updateVisibilityUiState.value = UpdateVisibilityUiState.Error(e.message ?: "Error")
+            }
+        }
+    }
+
+    fun resetUpdateVisibilityUiState() {
+        _updateVisibilityUiState.value = UpdateVisibilityUiState.Idle
     }
 }

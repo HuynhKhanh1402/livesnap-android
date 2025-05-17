@@ -11,6 +11,7 @@ import dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
 import dev.vku.livesnap.data.remote.dto.request.FeedbackRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateVisibilityRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -148,4 +149,7 @@ interface ApiService {
 
     @GET("users/feedback-history")
     suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse>
+
+    @PATCH("users/update-visibility")
+    suspend fun updateVisibility(@Body request: UpdateVisibilityRequest): Response<DefaultResponse>
 }

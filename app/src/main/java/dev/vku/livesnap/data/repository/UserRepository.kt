@@ -6,6 +6,7 @@ import dev.vku.livesnap.data.remote.dto.request.CheckUsernameExistRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
+import dev.vku.livesnap.data.remote.dto.request.UpdateVisibilityRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
@@ -29,6 +30,7 @@ interface UsersRepository {
     suspend fun getPaymentQR(): Response<PaymentQRResponse>
     suspend fun sendFeedback(message: String): Response<DefaultResponse>
     suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse>
+    suspend fun updateVisibility(visible: Boolean): Response<DefaultResponse>
 }
 
 class DefaultUsersRepository(
@@ -87,5 +89,9 @@ class DefaultUsersRepository(
 
     override suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse> {
         return apiService.getFeedbackHistory()
+    }
+
+    override suspend fun updateVisibility(visible: Boolean): Response<DefaultResponse> {
+        return apiService.updateVisibility(UpdateVisibilityRequest(visible))
     }
 }
