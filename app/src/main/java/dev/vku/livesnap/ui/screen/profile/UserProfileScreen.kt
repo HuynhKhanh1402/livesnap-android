@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Person
@@ -69,6 +71,9 @@ import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.domain.model.User
 import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 
 object UserProfileDestination : NavigationDestination {
     override val route: String = "profile"
@@ -97,6 +102,7 @@ fun UserProfileScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showGoldMemberDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var showFeedbackHistoryDialog by remember { mutableStateOf(false) }
     var feedbackText by remember { mutableStateOf("") }
     var showFeedbackSnackbar by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
@@ -256,7 +262,8 @@ fun UserProfileScreen(
 
             GeneralSection(
                 onChangeEmailClick = { showChangeEmailDialog = true },
-                onSendFeedbackClick = { showFeedbackDialog = true }
+                onSendFeedbackClick = { showFeedbackDialog = true },
+                onFeedbackHistoryClick = { showFeedbackHistoryDialog = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
             PrivacyNSecuritySection()
@@ -697,6 +704,81 @@ fun UserProfileScreen(
             showFeedbackSnackbar = false
         }
     }
+
+    // Modal Feedback History
+    if (showFeedbackHistoryDialog) {
+        val feedbackHistoryUiState by viewModel.feedbackHistoryUiState.collectAsState()
+        LaunchedEffect(showFeedbackHistoryDialog) {
+            viewModel.getFeedbackHistory()
+        }
+        ModalBottomSheet(
+            onDismissRequest = {
+                showFeedbackHistoryDialog = false
+                viewModel.resetFeedbackHistoryUiState()
+            },
+            shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp),
+            modifier = Modifier.fillMaxHeight(1f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(1f)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Feedback History",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                when (feedbackHistoryUiState) {
+                    is FeedbackHistoryUiState.Loading -> {
+                        CircularProgressIndicator()
+                    }
+                    is FeedbackHistoryUiState.Error -> {
+                        Text((feedbackHistoryUiState as FeedbackHistoryUiState.Error).error, color = MaterialTheme.colorScheme.error)
+                    }
+                    is FeedbackHistoryUiState.Success -> {
+                        val feedbacks = (feedbackHistoryUiState as FeedbackHistoryUiState.Success).feedbacks
+                        if (feedbacks.isEmpty()) {
+                            Text("No feedback yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                feedbacks.forEach { feedback ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp))
+                                            .padding(12.dp)
+                                    ) {
+                                        Column {
+                                            Text(feedback.message, fontWeight = FontWeight.Medium)
+                                            Text(formatFeedbackTime(feedback.createdAt), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Close",
+                    modifier = Modifier
+                        .clickable {
+                            showFeedbackHistoryDialog = false
+                            viewModel.resetFeedbackHistoryUiState()
+                        }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -966,7 +1048,8 @@ fun InviteCard(user: User) {
 @Composable
 fun GeneralSection(
     onChangeEmailClick: () -> Unit,
-    onSendFeedbackClick: () -> Unit
+    onSendFeedbackClick: () -> Unit,
+    onFeedbackHistoryClick: () -> Unit = {}
 ) {
     SectionTitle(
         icon = Icons.Default.Person,
@@ -995,6 +1078,12 @@ fun GeneralSection(
                 icon = Icons.AutoMirrored.Filled.Send,
                 text = "Send feedback",
                 onClick = onSendFeedbackClick
+            )
+            HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
+            SectionRow(
+                icon = Icons.Default.History,
+                text = "Feedback history",
+                onClick = onFeedbackHistoryClick
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
@@ -1155,5 +1244,15 @@ fun LogoutButton(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text("Log Out", style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+fun formatFeedbackTime(isoString: String): String {
+    return try {
+        val utc = ZonedDateTime.parse(isoString)
+        val vietnamTime = utc.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
+        vietnamTime.format(DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy"))
+    } catch (e: Exception) {
+        isoString // fallback nếu lỗi
     }
 }

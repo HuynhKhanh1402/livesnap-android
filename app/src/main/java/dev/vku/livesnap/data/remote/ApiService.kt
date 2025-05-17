@@ -25,6 +25,7 @@ import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserListResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
 import dev.vku.livesnap.data.remote.dto.response.PaymentQRResponse
+import dev.vku.livesnap.data.remote.dto.response.FeedbackHistoryResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -144,4 +145,7 @@ interface ApiService {
 
     @POST("users/send-feedback")
     suspend fun sendFeedback(@Body request: FeedbackRequest): Response<DefaultResponse>
+
+    @GET("users/feedback-history")
+    suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse>
 }

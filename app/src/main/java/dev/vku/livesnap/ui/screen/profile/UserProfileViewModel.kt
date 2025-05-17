@@ -78,6 +78,13 @@ sealed class SendFeedbackUiState {
     data class Error(val error: String) : SendFeedbackUiState()
 }
 
+sealed class FeedbackHistoryUiState {
+    object Idle : FeedbackHistoryUiState()
+    object Loading : FeedbackHistoryUiState()
+    data class Success(val feedbacks: List<dev.vku.livesnap.data.remote.dto.response.FeedbackHistoryResponse.FeedbackItem>) : FeedbackHistoryUiState()
+    data class Error(val error: String) : FeedbackHistoryUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -111,6 +118,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _sendFeedbackUiState = MutableStateFlow<SendFeedbackUiState>(SendFeedbackUiState.Idle)
     val sendFeedbackUiState: StateFlow<SendFeedbackUiState> = _sendFeedbackUiState
+
+    private val _feedbackHistoryUiState = MutableStateFlow<FeedbackHistoryUiState>(FeedbackHistoryUiState.Idle)
+    val feedbackHistoryUiState: StateFlow<FeedbackHistoryUiState> = _feedbackHistoryUiState
 
     fun resetState() {
         _fetchUserResult.value = FetchUserResult.Idle
@@ -320,5 +330,25 @@ class UserProfileViewModel @Inject constructor(
 
     fun resetSendFeedbackUiState() {
         _sendFeedbackUiState.value = SendFeedbackUiState.Idle
+    }
+
+    fun getFeedbackHistory() {
+        viewModelScope.launch {
+            _feedbackHistoryUiState.value = FeedbackHistoryUiState.Loading
+            try {
+                val response = userRepository.getFeedbackHistory()
+                if (response.isSuccessful && response.body() != null) {
+                    _feedbackHistoryUiState.value = FeedbackHistoryUiState.Success(response.body()!!.data)
+                } else {
+                    _feedbackHistoryUiState.value = FeedbackHistoryUiState.Error(response.message())
+                }
+            } catch (e: Exception) {
+                _feedbackHistoryUiState.value = FeedbackHistoryUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun resetFeedbackHistoryUiState() {
+        _feedbackHistoryUiState.value = FeedbackHistoryUiState.Idle
     }
 }

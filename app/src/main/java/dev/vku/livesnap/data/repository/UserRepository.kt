@@ -12,6 +12,7 @@ import dev.vku.livesnap.data.remote.dto.response.UserDetailResponse
 import dev.vku.livesnap.data.remote.dto.response.UserListResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.PaymentQRResponse
+import dev.vku.livesnap.data.remote.dto.response.FeedbackHistoryResponse
 import retrofit2.Response
 
 interface UsersRepository {
@@ -27,6 +28,7 @@ interface UsersRepository {
     suspend fun updateUsername(username: String): Response<DefaultResponse>
     suspend fun getPaymentQR(): Response<PaymentQRResponse>
     suspend fun sendFeedback(message: String): Response<DefaultResponse>
+    suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse>
 }
 
 class DefaultUsersRepository(
@@ -81,5 +83,9 @@ class DefaultUsersRepository(
 
     override suspend fun sendFeedback(message: String): Response<DefaultResponse> {
         return apiService.sendFeedback(dev.vku.livesnap.data.remote.dto.request.FeedbackRequest(message))
+    }
+
+    override suspend fun getFeedbackHistory(): Response<FeedbackHistoryResponse> {
+        return apiService.getFeedbackHistory()
     }
 }
