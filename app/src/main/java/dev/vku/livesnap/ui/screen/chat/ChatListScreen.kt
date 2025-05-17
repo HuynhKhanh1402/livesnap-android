@@ -167,7 +167,7 @@ fun ChatItem(
         ) {
             if (chatWithUser.chat.lastMessage != null) {
                 Text(
-                    text = formatChatTime(chatWithUser.chat.lastMessage.timestamp),
+                    text = formatChatTime(chatWithUser.chat.lastMessage.timestamp!!),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )

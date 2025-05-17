@@ -93,7 +93,7 @@ fun ChatScreen(
                         Avatar(
                             size = 40,
                             avatarUrl = otherUser?.avatar,
-                            initials = otherUser?.let { 
+                            initials = otherUser?.let {
                                 "${it.firstName.firstOrNull() ?: ""}${it.lastName.firstOrNull() ?: ""}"
                             }?.uppercase(),
                             isGold = otherUser?.isGold == true,
@@ -282,9 +282,9 @@ fun MessageInput(
                 ),
                 maxLines = 4
             )
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             IconButton(
                 onClick = onSendClick,
                 modifier = Modifier
@@ -302,10 +302,12 @@ fun MessageInput(
     }
 }
 
-private fun formatMessageTime(date: Date): String {
+private fun formatMessageTime(date: Date?): String {
+    if (date == null) return "Sending..."
+    
     val now = Calendar.getInstance()
     val messageDate = Calendar.getInstance().apply { time = date }
-    
+
     return when {
         now.get(Calendar.DATE) == messageDate.get(Calendar.DATE) -> {
             SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)

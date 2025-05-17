@@ -66,7 +66,7 @@ class ChatViewModel @Inject constructor(
                 val chat = messageRepository.getChat(chatId)
                 val currentUserId = getCurrentUserId()
                 val otherUserId = chat.participants.firstOrNull { it != currentUserId }
-                
+
                 // Load other user's details
                 otherUserId?.let { userId ->
                     try {
@@ -119,7 +119,7 @@ class ChatViewModel @Inject constructor(
 
     fun sendMessage(content: String) {
         val chatId = currentChatId ?: return
-        
+
         viewModelScope.launch {
             messageRepository.sendMessage(chatId, content)
                 .onSuccess { message ->

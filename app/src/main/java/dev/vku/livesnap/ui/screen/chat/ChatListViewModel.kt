@@ -58,7 +58,7 @@ class ChatListViewModel @Inject constructor(
                         val otherUserId = chat.participants.find { it != currentUserId }
                         val otherUser = otherUserId?.let { fetchUserDetails(it) }
                         ChatWithUser(chat, otherUser)
-                    }
+                    }.sortedByDescending { it.chat.lastMessage?.timestamp }
                     _chats.value = chatsWithUsers
                     _isLoading.value = false
                 }

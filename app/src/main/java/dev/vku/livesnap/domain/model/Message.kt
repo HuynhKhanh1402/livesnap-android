@@ -9,6 +9,6 @@ data class Message(
     val receiverId: String = "",
     val content: String = "",
     val snapId: String? = null,
-    val timestamp: Date = Date(),
+    val timestamp: Date? = null,
     val isRead: Boolean = false
 )

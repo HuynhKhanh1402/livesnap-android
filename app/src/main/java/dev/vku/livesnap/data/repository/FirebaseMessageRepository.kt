@@ -3,6 +3,7 @@ package dev.vku.livesnap.data.repository
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.FieldValue
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.domain.model.Chat
 import dev.vku.livesnap.domain.model.Message
@@ -11,6 +12,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+
+private fun Message.toMap(): MutableMap<String, Any?> {
+    return mutableMapOf(
+        "id" to id,
+        "chatId" to chatId,
+        "senderId" to senderId,
+        "receiverId" to receiverId,
+        "content" to content,
+        "snapId" to snapId,
+        "timestamp" to timestamp,
+        "isRead" to isRead
+    )
+}
 
 class FirebaseMessageRepository(
     firestore: FirebaseFirestore,
@@ -101,19 +115,26 @@ class FirebaseMessageRepository(
             receiverId = receiverId,
             content = content,
             snapId = snapId,
-            timestamp = Date()
+            timestamp = Date() // This will be overwritten by server timestamp
         )
 
         val docRef = messagesCollection.document()
         val messageWithId = message.copy(id = docRef.id)
         
-        docRef.set(messageWithId).await()
+        // Use server timestamp
+        val messageData = messageWithId.toMap()
+        messageData["timestamp"] = FieldValue.serverTimestamp()
+        docRef.set(messageData).await()
+        
+        // Get the actual message with server timestamp
+        val savedMessage = docRef.get().await().toObject(Message::class.java)?.copy(id = docRef.id)
+            ?: throw IllegalStateException("Failed to save message")
         
         // Update last message in chat
         chatsCollection.document(chatId)
-            .update("lastMessage", messageWithId)
+            .update("lastMessage", savedMessage)
             .await()
-        Result.success(messageWithId)
+        Result.success(savedMessage)
     } catch (e: Exception) {
         Log.e("FirebaseMessageRepository", "Error sending message: ${e.message}", e)
         Result.failure(e)
