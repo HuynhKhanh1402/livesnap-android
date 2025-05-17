@@ -88,6 +88,7 @@ fun UserProfileScreen(
     val logoutResult by viewModel.logoutResult.collectAsState()
     val logoutUiState by viewModel.logoutUiState.collectAsState()
     val isLoading by viewModel.loadingState.collectAsState()
+    val sendFeedbackUiState by viewModel.sendFeedbackUiState.collectAsState()
 
     var user by remember { mutableStateOf<User?>(null) }
     var showAvatarDialog by remember { mutableStateOf(false) }
@@ -95,6 +96,9 @@ fun UserProfileScreen(
     var showChangeEmailDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showGoldMemberDialog by remember { mutableStateOf(false) }
+    var showFeedbackDialog by remember { mutableStateOf(false) }
+    var feedbackText by remember { mutableStateOf("") }
+    var showFeedbackSnackbar by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var showPasswordError by remember { mutableStateOf(false) }
@@ -250,9 +254,9 @@ fun UserProfileScreen(
                 }
             }
 
-
             GeneralSection(
-                onChangeEmailClick = { showChangeEmailDialog = true }
+                onChangeEmailClick = { showChangeEmailDialog = true },
+                onSendFeedbackClick = { showFeedbackDialog = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
             PrivacyNSecuritySection()
@@ -600,6 +604,99 @@ fun UserProfileScreen(
             }
         )
     }
+
+    // Feedback Modal
+    if (showFeedbackDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { 
+                showFeedbackDialog = false
+                feedbackText = ""
+            },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Send Feedback",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                TextField(
+                    value = feedbackText,
+                    onValueChange = { feedbackText = it },
+                    label = { Text("Your feedback") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        if (feedbackText.isNotBlank()) {
+                            viewModel.sendFeedback(feedbackText)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = sendFeedbackUiState !is SendFeedbackUiState.Loading
+                ) {
+                    if (sendFeedbackUiState is SendFeedbackUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Send", fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    text = "Cancel",
+                    modifier = Modifier
+                        .clickable { 
+                            showFeedbackDialog = false
+                            feedbackText = ""
+                        }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    // Handle feedback result
+    LaunchedEffect(sendFeedbackUiState) {
+        when (sendFeedbackUiState) {
+            is SendFeedbackUiState.Success -> {
+                showFeedbackDialog = false
+                feedbackText = ""
+                showFeedbackSnackbar = true
+                viewModel.resetSendFeedbackUiState()
+            }
+            is SendFeedbackUiState.Error -> {
+                snackbarHostState.showSnackbar((sendFeedbackUiState as SendFeedbackUiState.Error).error)
+                viewModel.resetSendFeedbackUiState()
+            }
+            else -> {}
+        }
+    }
+
+    // Feedback Snackbar
+    if (showFeedbackSnackbar) {
+        LaunchedEffect(Unit) {
+            snackbarHostState.showSnackbar("Thank you for your feedback!")
+            showFeedbackSnackbar = false
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -868,7 +965,8 @@ fun InviteCard(user: User) {
 
 @Composable
 fun GeneralSection(
-    onChangeEmailClick: () -> Unit
+    onChangeEmailClick: () -> Unit,
+    onSendFeedbackClick: () -> Unit
 ) {
     SectionTitle(
         icon = Icons.Default.Person,
@@ -896,7 +994,7 @@ fun GeneralSection(
             SectionRow(
                 icon = Icons.AutoMirrored.Filled.Send,
                 text = "Send feedback",
-                onClick = { /* TODO */ }
+                onClick = onSendFeedbackClick
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(

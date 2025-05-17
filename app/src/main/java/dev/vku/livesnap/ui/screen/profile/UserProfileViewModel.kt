@@ -71,6 +71,13 @@ sealed class UpdateUsernameUiState {
     data class Error(val message: String) : UpdateUsernameUiState()
 }
 
+sealed class SendFeedbackUiState {
+    object Idle : SendFeedbackUiState()
+    object Loading : SendFeedbackUiState()
+    data class Success(val message: String) : SendFeedbackUiState()
+    data class Error(val error: String) : SendFeedbackUiState()
+}
+
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     val tokenManager: TokenManager,
@@ -101,6 +108,9 @@ class UserProfileViewModel @Inject constructor(
 
     private val _updateUsernameUiState = MutableStateFlow<UpdateUsernameUiState>(UpdateUsernameUiState.Initial)
     val updateUsernameUiState: StateFlow<UpdateUsernameUiState> = _updateUsernameUiState
+
+    private val _sendFeedbackUiState = MutableStateFlow<SendFeedbackUiState>(SendFeedbackUiState.Idle)
+    val sendFeedbackUiState: StateFlow<SendFeedbackUiState> = _sendFeedbackUiState
 
     fun resetState() {
         _fetchUserResult.value = FetchUserResult.Idle
@@ -290,5 +300,25 @@ class UserProfileViewModel @Inject constructor(
 
     fun resetUpdateUsernameState() {
         _updateUsernameUiState.value = UpdateUsernameUiState.Initial
+    }
+
+    fun sendFeedback(message: String) {
+        viewModelScope.launch {
+            _sendFeedbackUiState.value = SendFeedbackUiState.Loading
+            try {
+                val response = userRepository.sendFeedback(message)
+                if (response.isSuccessful && response.body() != null) {
+                    _sendFeedbackUiState.value = SendFeedbackUiState.Success(response.body()!!.message ?: "Feedback sent successfully.")
+                } else {
+                    _sendFeedbackUiState.value = SendFeedbackUiState.Error(response.message())
+                }
+            } catch (e: Exception) {
+                _sendFeedbackUiState.value = SendFeedbackUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun resetSendFeedbackUiState() {
+        _sendFeedbackUiState.value = SendFeedbackUiState.Idle
     }
 }

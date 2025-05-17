@@ -26,6 +26,7 @@ interface UsersRepository {
     suspend fun updateFcmToken(fcmToken: String): Response<DefaultResponse>
     suspend fun updateUsername(username: String): Response<DefaultResponse>
     suspend fun getPaymentQR(): Response<PaymentQRResponse>
+    suspend fun sendFeedback(message: String): Response<DefaultResponse>
 }
 
 class DefaultUsersRepository(
@@ -76,5 +77,9 @@ class DefaultUsersRepository(
 
     override suspend fun getPaymentQR(): Response<PaymentQRResponse> {
         return apiService.getPaymentQR()
+    }
+
+    override suspend fun sendFeedback(message: String): Response<DefaultResponse> {
+        return apiService.sendFeedback(dev.vku.livesnap.data.remote.dto.request.FeedbackRequest(message))
     }
 }

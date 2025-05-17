@@ -10,6 +10,7 @@ import dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
+import dev.vku.livesnap.data.remote.dto.request.FeedbackRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -140,4 +141,7 @@ interface ApiService {
 
     @GET("users/payment-qr")
     suspend fun getPaymentQR(): Response<PaymentQRResponse>
+
+    @POST("users/send-feedback")
+    suspend fun sendFeedback(@Body request: FeedbackRequest): Response<DefaultResponse>
 }
