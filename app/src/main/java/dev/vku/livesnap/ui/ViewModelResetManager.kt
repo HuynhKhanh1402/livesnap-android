@@ -14,35 +14,25 @@ import javax.inject.Singleton
 
 @Singleton
 class ViewModelResetManager @Inject constructor() {
-    fun resetAllViewModels(
-        loginViewModel: LoginViewModel? = null,
-        registrationViewModel: RegistrationViewModel? = null,
-        chatListViewModel: ChatListViewModel? = null,
-        chatViewModel: ChatViewModel? = null,
-        captureViewModel: CaptureViewModel? = null,
-        feedViewModel: FeedViewModel? = null,
-        friendModalViewModel: FriendModalViewModel? = null,
-        uploadSnapViewModel: UploadSnapViewModel? = null,
-        userProfileViewModel: UserProfileViewModel? = null
-    ) {
-        // Reset auth related ViewModels
+    var loginViewModel: LoginViewModel? = null
+    var registrationViewModel: RegistrationViewModel? = null
+    var chatListViewModel: ChatListViewModel? = null
+    var chatViewModel: ChatViewModel? = null
+    var captureViewModel: CaptureViewModel? = null
+    var feedViewModel: FeedViewModel? = null
+    var friendModalViewModel: FriendModalViewModel? = null
+    var uploadSnapViewModel: UploadSnapViewModel? = null
+    var userProfileViewModel: UserProfileViewModel? = null
+
+    fun resetAllViewModels() {
         loginViewModel?.resetState()
-        
         registrationViewModel?.resetState()
-
-        // Reset capture related ViewModels
         captureViewModel?.resetState()
-
-        // Reset chat related ViewModels
         chatListViewModel?.resetState()
         chatViewModel?.resetState()
-
-        // Reset home related ViewModels
         feedViewModel?.resetState()
         friendModalViewModel?.resetState()
         uploadSnapViewModel?.resetState()
-
-        // Reset profile ViewModel
         userProfileViewModel?.resetState()
     }
 } 

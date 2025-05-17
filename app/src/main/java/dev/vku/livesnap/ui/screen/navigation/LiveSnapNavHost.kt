@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import dev.vku.livesnap.core.common.AuthEventBus
+import dev.vku.livesnap.ui.ViewModelResetManager
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
 import dev.vku.livesnap.ui.screen.auth.AuthSelectViewModel
@@ -83,26 +84,27 @@ fun LiveSnapNavHost(
 
     val userProfileViewModel: UserProfileViewModel = hiltViewModel()
 
-    var showSessionExpiredDialog by remember { mutableStateOf(false) }
-
-    // Function to reset all ViewModels
-    fun resetAllViewModels() {
-        userProfileViewModel.viewModelResetManager.resetAllViewModels(
-            loginViewModel = loginViewModel,
-            registrationViewModel = registrationViewModel,
-            captureViewModel = captureViewModel,
-            feedViewModel = feedViewModel,
-            friendModalViewModel = friendModalViewModel,
-            uploadSnapViewModel = uploadSnapViewModel,
-            userProfileViewModel = userProfileViewModel
-        )
+    val viewModelResetManager = ViewModelResetManager().apply {
+        this.loginViewModel = loginViewModel
+        this.registrationViewModel = registrationViewModel
+        this.captureViewModel = captureViewModel
+        this.chatListViewModel = chatListViewModel
+        this.chatViewModel = chatViewModel
+        this.feedViewModel = feedViewModel
+        this.friendModalViewModel = friendModalViewModel
+        this.uploadSnapViewModel = uploadSnapViewModel
+        this.userProfileViewModel = userProfileViewModel
     }
 
-    // Check token when NavHost is created
+    var showSessionExpiredDialog by remember { mutableStateOf(false) }
+
+    fun resetAllViewModels() {
+        viewModelResetManager.resetAllViewModels()
+    }
+
     LaunchedEffect(Unit) {
         val token = authSelectViewModel.tokenManager.getToken()
         if (token == null || token.isEmpty()) {
-            // Reset all ViewModels before navigating to auth screen
             resetAllViewModels()
             navController.navigate(AuthSelectDestination.route) {
                 popUpTo(0) { inclusive = true }
@@ -128,7 +130,6 @@ fun LiveSnapNavHost(
             confirmButton = {
                 TextButton(onClick = {
                     authSelectViewModel.clearToken()
-                    // Reset all ViewModels before navigating to auth screen
                     resetAllViewModels()
                     showSessionExpiredDialog = false
                     navController.navigate(AuthSelectDestination.route) {
@@ -260,10 +261,10 @@ fun LiveSnapNavHost(
                     viewModel = userProfileViewModel,
                     snackbarHostState = snackbarHostState,
                     onLoggedOut = {
+                        resetAllViewModels()
                         navController.navigate(AuthSelectDestination.route) {
                             popUpTo(0) { inclusive = true }
                         }
-                        resetAllViewModels()
                     },
                     onPremiumFeaturesClick = {
                         navController.navigate(PremiumFeaturesDestination.route)
