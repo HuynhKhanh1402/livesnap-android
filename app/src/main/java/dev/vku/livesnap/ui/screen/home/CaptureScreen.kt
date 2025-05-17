@@ -76,7 +76,8 @@ fun CaptureScreen(
     val hasCameraPermission by viewModel.hasCameraPermission.collectAsState()
     val isFlashOn by viewModel.isFlashOn.collectAsState()
     val lensFacing by viewModel.lensFacing.collectAsState()
-    val isGold by viewModel.isGold.collectAsState()
+    val goldState by viewModel.isGold.collectAsState()
+    val isGold = if (goldState is LoadingResult.Success) (goldState as LoadingResult.Success).data else false
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -122,6 +123,21 @@ fun CaptureScreen(
             viewModel.resetCapturedImageURI()
             onImageCaptured(uri)
             viewModel.resetGalleryImageUri()
+        }
+    }
+
+    LaunchedEffect(goldState) {
+        when(goldState) {
+            is LoadingResult.Idle -> {
+                viewModel.fetchUserPremiumStatus()
+            }
+            is LoadingResult.Error -> {
+                val message = (goldState as LoadingResult.Error).message
+                snackbarHostState.showSnackbar(message)
+                viewModel.resetGoldResult()
+            }
+            else -> {
+            }
         }
     }
 
@@ -202,6 +218,8 @@ fun CaptureScreen(
             }
         }
     }
+
+    LaunchedEffect(goldState) { }
 
     if (showFriendSheet) {
         FriendModal(

@@ -142,9 +142,12 @@ fun FeedScreen(
 
     LaunchedEffect(isGoldResult) {
         when (isGoldResult) {
+            is LoadingResult.Idle -> {
+                viewModel.fetchUserPremiumStatus()
+            }
             is LoadingResult.Error -> {
                 snackbarHostState.showSnackbar((isGoldResult as LoadingResult.Error).message)
-                viewModel.resetState()
+                viewModel.resetGoldResult()
             }
             else -> {}
         }

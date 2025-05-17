@@ -73,28 +73,26 @@ class FeedViewModel @Inject constructor(
     private var _isGold = MutableStateFlow<LoadingResult<Boolean>>(LoadingResult.Idle)
     val isGold: StateFlow<LoadingResult<Boolean>> = _isGold
 
-    init {
-        fetchUserPremiumStatus()
-    }
-
-    private fun fetchUserPremiumStatus() {
-        if (_isGold.value is LoadingResult.Idle) {
-            viewModelScope.launch {
-                try {
-                    _isGold.value = LoadingResult.Loading
-                    val response = userRepository.fetchUserDetail()
-                    if (response.isSuccessful) {
-                        val user = response.body()?.data?.user?.toDomain()
-                        _isGold.value = LoadingResult.Success(user?.isGold ?: false)
-                    } else {
-                        _isGold.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
-                    }
-                } catch (e: Exception) {
-                    Log.e("FeedViewModel", "Error fetching user premium status: ${e.message}", e)
-                    _isGold.value = LoadingResult.Error(e.message ?: "Unknown error")
+    fun fetchUserPremiumStatus() {
+        viewModelScope.launch {
+            try {
+                _isGold.value = LoadingResult.Loading
+                val response = userRepository.fetchUserDetail()
+                if (response.isSuccessful) {
+                    val user = response.body()?.data?.user?.toDomain()
+                    _isGold.value = LoadingResult.Success(user?.isGold ?: false)
+                } else {
+                    _isGold.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
                 }
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Error fetching user premium status: ${e.message}", e)
+                _isGold.value = LoadingResult.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    fun resetGoldResult() {
+        _isGold.value = LoadingResult.Idle
     }
 
     fun resetState() {

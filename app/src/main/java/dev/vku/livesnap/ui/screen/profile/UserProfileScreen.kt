@@ -1,7 +1,9 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,6 +81,7 @@ object UserProfileDestination : NavigationDestination {
     override val route: String = "profile"
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
@@ -1335,12 +1338,13 @@ fun LogoutButton(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun formatFeedbackTime(isoString: String): String {
     return try {
         val utc = ZonedDateTime.parse(isoString)
         val vietnamTime = utc.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
         vietnamTime.format(DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy"))
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         isoString // fallback nếu lỗi
     }
 }

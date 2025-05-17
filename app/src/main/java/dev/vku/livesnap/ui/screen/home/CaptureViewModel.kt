@@ -44,8 +44,8 @@ class CaptureViewModel @Inject constructor(
     private val _lensFacing = MutableStateFlow(CameraSelector.LENS_FACING_BACK)
     val lensFacing: StateFlow<Int> = _lensFacing
 
-    private val _isGold = MutableStateFlow(false)
-    val isGold: StateFlow<Boolean> = _isGold
+    private val _isGold = MutableStateFlow<LoadingResult<Boolean>>(LoadingResult.Idle)
+    val isGold: StateFlow<LoadingResult<Boolean>> = _isGold
 
     val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
         ProcessCameraProvider.getInstance(context)
@@ -64,22 +64,26 @@ class CaptureViewModel @Inject constructor(
     private val _fetchFriendCountResult = MutableStateFlow<LoadingResult<Int>>(LoadingResult.Idle)
     val fetchFriendCountResult: StateFlow<LoadingResult<Int>> = _fetchFriendCountResult
 
-    init {
-        fetchUserPremiumStatus()
-    }
-
-    private fun fetchUserPremiumStatus() {
+    fun fetchUserPremiumStatus() {
         viewModelScope.launch {
             try {
+                _isGold.value = LoadingResult.Loading
                 val response = userRepository.fetchUserDetail()
                 if (response.isSuccessful) {
                     val user = response.body()?.data?.user?.toDomain()
-                    _isGold.value = user?.isGold == true
+                    _isGold.value = LoadingResult.Success(user?.isGold ?: false)
+                } else {
+                    _isGold.value = LoadingResult.Error(response.body()?.message ?: "Unknown error")
                 }
             } catch (e: Exception) {
                 Log.e("CaptureViewModel", "Error fetching user premium status: ${e.message}", e)
+                _isGold.value = LoadingResult.Error("Error fetching user premium status: ${e.message}")
             }
         }
+    }
+
+    fun resetGoldResult() {
+        _isGold.value = LoadingResult.Idle
     }
 
     fun checkCameraPermission() {
@@ -221,6 +225,7 @@ class CaptureViewModel @Inject constructor(
         _galleryImageUri.value = null
         _fetchFriendCountResult.value = LoadingResult.Idle
         imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF
+        _isGold.value = LoadingResult.Idle
     }
 
     override fun onCleared() {
