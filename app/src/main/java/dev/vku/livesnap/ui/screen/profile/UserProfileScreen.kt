@@ -110,6 +110,8 @@ fun UserProfileScreen(
     var showPasswordError by remember { mutableStateOf(false) }
     var showEmailError by remember { mutableStateOf(false) }
     val changeEmailUiState by viewModel.changeEmailUiState.collectAsState()
+    var showAccountVisibilityDialog by remember { mutableStateOf(false) }
+    var isAccountVisible by remember { mutableStateOf(true) } // default: hiển thị
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -266,7 +268,7 @@ fun UserProfileScreen(
                 onFeedbackHistoryClick = { showFeedbackHistoryDialog = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
-            PrivacyNSecuritySection()
+            PrivacyNSecuritySection(onAccountVisibilityClick = { showAccountVisibilityDialog = true })
             Spacer(modifier = Modifier.height(24.dp))
         }
         AboutSection()
@@ -779,6 +781,62 @@ fun UserProfileScreen(
             }
         }
     }
+
+    // Modal Bottom Sheet cho Account Visibility
+    if (showAccountVisibilityDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { showAccountVisibilityDialog = false },
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Account Visibility",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "Allow friends to add me by username",
+                        modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.Switch(
+                        checked = isAccountVisible,
+                        onCheckedChange = { isAccountVisible = it }
+                    )
+                }
+                Text(
+                    text = if (isAccountVisible) {
+                        "When enabled, other users can find your account by username or add you via your invite link."
+                    } else {
+                        "When disabled, only people who have saved you in their contacts or those you have shared an invite link with can send you friend requests."
+                    },
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    text = "Close",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showAccountVisibilityDialog = false }
+                        .padding(vertical = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1096,7 +1154,7 @@ fun GeneralSection(
 }
 
 @Composable
-fun PrivacyNSecuritySection() {
+fun PrivacyNSecuritySection(onAccountVisibilityClick: () -> Unit) {
     SectionTitle(
         icon = Icons.Default.Lock,
         text = "Privacy & Security"
@@ -1113,7 +1171,7 @@ fun PrivacyNSecuritySection() {
         SectionRow(
             icon = Icons.Default.Visibility,
             text = "Account Visibility",
-            onClick = { /* TODO */ },
+            onClick = onAccountVisibilityClick,
             modifier = Modifier.padding(8.dp)
         )
     }
