@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,10 +60,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.data.remote.dto.response.FriendSuggestionListDTO
@@ -82,6 +85,7 @@ fun FriendModal(
     modifier: Modifier = Modifier
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
+    val userDetails by viewModel.userDetails.collectAsState()
 
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResult by viewModel.searchUsersResult.collectAsState()
@@ -166,7 +170,7 @@ fun FriendModal(
                 fontWeight = FontWeight.Bold
             )
 
-            SocialAppIconsRow()
+            SocialAppIconsRow(userDetails)
 
             Text(
                 text = "YOUR FRIENDS",
@@ -275,6 +279,7 @@ fun FriendModal(
             viewModel.fetchFriendList()
             viewModel.fetchSentFriendRequestList()
             viewModel.fetchSuggestionFriends()
+            viewModel.fetchUserDetails()
         }
     }
 
@@ -678,8 +683,16 @@ fun InComingFriendRequest(
 
 @Composable
 fun SocialAppIconsRow(
+    user: User?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val shareText = if (user != null) {
+        "Add me on LiveSnap! My username is ${user.username}"
+    } else {
+        "Join me on LiveSnap! Download the app now: livesnap.app"
+    }
+
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -690,16 +703,28 @@ fun SocialAppIconsRow(
 
         // Messenger
         IconButton(
-            onClick = { /* TODO: handle */ },
+            onClick = {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage("com.facebook.orca")
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = "market://details?id=com.facebook.orca".toUri()
+                    }
+                    context.startActivity(intent)
+                }
+            },
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)
-                .background(Color(0xFF0166ff)) // Messenger blue
+                .background(Color(0xFF0166ff))
         ) {
-
-
             Image(
-                painter = painterResource(id = R.drawable.ic_messenger), // your drawable
+                painter = painterResource(id = R.drawable.ic_messenger),
                 contentDescription = "Messenger",
                 modifier = Modifier.size(48.dp)
             )
@@ -707,7 +732,21 @@ fun SocialAppIconsRow(
 
         // Zalo
         IconButton(
-            onClick = { /* TODO */ },
+            onClick = {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage("com.zing.zalo")
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = "market://details?id=com.zing.zalo".toUri()
+                    }
+                    context.startActivity(intent)
+                }
+            },
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)
@@ -720,9 +759,22 @@ fun SocialAppIconsRow(
             )
         }
 
-        // Instagram
         IconButton(
-            onClick = { /* TODO */ },
+            onClick = {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage("com.instagram.android")
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = "market://details?id=com.instagram.android".toUri()
+                    }
+                    context.startActivity(intent)
+                }
+            },
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)
@@ -739,9 +791,18 @@ fun SocialAppIconsRow(
             )
         }
 
-        // Share (Khác)
+        // Share (Others)
         IconButton(
-            onClick = { /* TODO */ },
+            onClick = {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                }
+                val chooserIntent = Intent.createChooser(shareIntent, "Share via")
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooserIntent)
+            },
             modifier = Modifier
                 .size(iconSize)
                 .clip(CircleShape)

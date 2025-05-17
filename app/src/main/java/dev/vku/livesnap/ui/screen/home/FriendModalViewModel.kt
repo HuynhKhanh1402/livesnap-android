@@ -33,6 +33,9 @@ class FriendModalViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _userDetails = MutableStateFlow<User?>(null)
+    val userDetails: StateFlow<User?> = _userDetails
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
@@ -97,6 +100,7 @@ class FriendModalViewModel @Inject constructor(
         _cancelFriendRequestResult.value = LoadingResult.Idle
         _suggestionFriendsResult.value = LoadingResult.Idle
         _error.value = null
+        _userDetails.value = null
 
         // Reset all mutable state variables
         isFirstLoad = true
@@ -116,7 +120,16 @@ class FriendModalViewModel @Inject constructor(
 
     fun resetViewModel() {
         isFirstLoad = true
+        _error.value = null
+        _searchUsersResult.value = LoadingResult.Idle
+        _sendFriendRequestResult.value = LoadingResult.Idle
+        _fetchIncomingRequestListResult.value = LoadingResult.Idle
+        _acceptFriendRequestResult.value = LoadingResult.Idle
+        _rejectFriendRequestResult.value = LoadingResult.Idle
         _fetchFriendListResult.value = LoadingResult.Idle
+        _removeFriendResult.value = LoadingResult.Idle
+        _sentFriendRequestListResult.value = LoadingResult.Idle
+        _cancelFriendRequestResult.value = LoadingResult.Idle
     }
 
     @OptIn(FlowPreview::class)
@@ -344,19 +357,6 @@ class FriendModalViewModel @Inject constructor(
         fetchSentFriendRequestList()
     }
 
-    fun clearError() {
-        _error.value = null
-        _searchUsersResult.value = LoadingResult.Idle
-        _sendFriendRequestResult.value = LoadingResult.Idle
-        _fetchIncomingRequestListResult.value = LoadingResult.Idle
-        _acceptFriendRequestResult.value = LoadingResult.Idle
-        _rejectFriendRequestResult.value = LoadingResult.Idle
-        _fetchFriendListResult.value = LoadingResult.Idle
-        _removeFriendResult.value = LoadingResult.Idle
-        _sentFriendRequestListResult.value = LoadingResult.Idle
-        _cancelFriendRequestResult.value = LoadingResult.Idle
-    }
-
     fun fetchSuggestionFriends() {
         viewModelScope.launch {
             _suggestionFriendsResult.value = LoadingResult.Loading
@@ -373,6 +373,21 @@ class FriendModalViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("FriendModalViewModel", "An error occurred while fetching suggestion friends: ${e.message}", e)
                 _suggestionFriendsResult.value = LoadingResult.Error("An error occurred while fetching suggestion friends: ${e.message}")
+            }
+        }
+    }
+
+    fun fetchUserDetails() {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.fetchUserDetail()
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    _userDetails.value = response.body()?.data?.user?.toDomain()
+                } else {
+                    Log.e("FriendModalViewModel", "Error fetching user details: ${response.body()?.message ?: "Unknown error"}")
+                }
+            } catch (e: Exception) {
+                Log.e("FriendModalViewModel", "An error occurred while fetching user details: ${e.message}", e)
             }
         }
     }

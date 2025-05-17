@@ -1,5 +1,6 @@
 package dev.vku.livesnap.ui.screen.profile
 
+import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -1096,6 +1098,8 @@ fun Tag(
 
 @Composable
 fun InviteCard(user: User) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1103,7 +1107,17 @@ fun InviteCard(user: User) {
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "Add me on LiveSnap! My username is ${user.username}")
+                }
+                val chooserIntent = Intent.createChooser(shareIntent, "Share via")
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooserIntent)
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Avatar(
@@ -1118,7 +1132,7 @@ fun InviteCard(user: User) {
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Mời bạn bè tham gia LiveSnap",
+                text = "Invite friends to join LiveSnap",
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.W500
             )
@@ -1130,7 +1144,7 @@ fun InviteCard(user: User) {
         }
         Icon(
             imageVector = Icons.Default.Share,
-            contentDescription = null,
+            contentDescription = "Share",
             tint = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
@@ -1212,6 +1226,8 @@ fun PrivacyNSecuritySection(onAccountVisibilityClick: () -> Unit) {
 
 @Composable
 fun AboutSection() {
+    val context = LocalContext.current
+
     SectionTitle(
         icon = Icons.Default.Favorite,
         text = "About"
@@ -1232,7 +1248,16 @@ fun AboutSection() {
             SectionRow(
                 icon = Icons.Default.Share,
                 text = "Share LiveSnap",
-                onClick = { /* TODO */ }
+                onClick = {
+                    val shareIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "Join me on LiveSnap! Download the app now: livesnap.app")
+                    }
+                    val chooserIntent = Intent.createChooser(shareIntent, "Share via")
+                    chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(chooserIntent)
+                }
             )
             HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
             SectionRow(
