@@ -12,6 +12,7 @@ import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
 import dev.vku.livesnap.data.remote.dto.request.FeedbackRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateVisibilityRequest
+import dev.vku.livesnap.data.remote.dto.request.SendVerificationOtpRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -52,6 +53,9 @@ interface ApiService {
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("auth/send-verification-otp")
+    suspend fun sendVerificationOtp(@Body request: SendVerificationOtpRequest): Response<DefaultResponse>
 
     @GET("users/detail")
     suspend fun fetchUserDetail(): Response<UserDetailResponse>
