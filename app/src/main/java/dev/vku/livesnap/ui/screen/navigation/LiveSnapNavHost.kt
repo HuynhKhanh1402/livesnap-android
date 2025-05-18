@@ -40,6 +40,8 @@ import dev.vku.livesnap.ui.screen.auth.register.RegistrationEmailDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationEmailScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationNameDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationNameScreen
+import dev.vku.livesnap.ui.screen.auth.register.RegistrationOtpDestination
+import dev.vku.livesnap.ui.screen.auth.register.RegistrationOtpScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordDestination
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationPasswordScreen
 import dev.vku.livesnap.ui.screen.auth.register.RegistrationUserIdDestination
@@ -186,6 +188,15 @@ fun LiveSnapNavHost(
             }
             composable(route = RegistrationUserIdDestination.route) {
                 RegistrationUsernameScreen(
+                    viewModel = registrationViewModel,
+                    snackbarHostState = snackbarHostState,
+                    onBack = { navController.popBackStack() },
+                    onNext = { navController.navigate(RegistrationOtpDestination.route) }
+                )
+            }
+
+            composable(route = RegistrationOtpDestination.route) {
+                RegistrationOtpScreen(
                     viewModel = registrationViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },

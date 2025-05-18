@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.vku.livesnap.data.remote.dto.request.SendVerificationOtpRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
 import dev.vku.livesnap.data.repository.AuthRepository
 import dev.vku.livesnap.data.repository.FCMRepository
@@ -21,6 +22,19 @@ sealed class EmailExistResult {
     data object NotExist : EmailExistResult()
     data class Error(val message: String) : EmailExistResult()
     data object Idle : EmailExistResult()
+}
+
+sealed class UsernameExistResult {
+    data object Exist : UsernameExistResult()
+    data object NotExist : UsernameExistResult()
+    data class Error(val message: String) : UsernameExistResult()
+    data object Idle : UsernameExistResult()
+}
+
+sealed class SendOtpResult {
+    data object Success : SendOtpResult()
+    data class Error(val message: String) : SendOtpResult()
+    data object Idle : SendOtpResult()
 }
 
 sealed class RegistrationResult {
@@ -42,13 +56,34 @@ class RegistrationViewModel @Inject constructor(
     private val fcmRepository: FCMRepository
 ): ViewModel() {
     var email by mutableStateOf("")
-
+    var username by mutableStateOf("")
+    var otp by mutableStateOf("")
     var isEmailValid by mutableStateOf(true)
+        private set
+    var isUsernameValid by mutableStateOf(true)
+        private set
+
+    private val _usernameExistResult = MutableStateFlow<UsernameExistResult>(UsernameExistResult.Idle)
+    val usernameExistResult: StateFlow<UsernameExistResult> = _usernameExistResult
+
+    private val _sendOtpResult = MutableStateFlow<SendOtpResult>(SendOtpResult.Idle)
+    val sendOtpResult: StateFlow<SendOtpResult> = _sendOtpResult
+
+    var isLoading by mutableStateOf(false)
         private set
 
     fun setEmailField(newEmail: String) {
         email = newEmail
         isEmailValid = validateEmail(newEmail)
+    }
+
+    fun setUsernameField(newUsername: String) {
+        username = newUsername
+        isUsernameValid = isValidUsername()
+    }
+
+    fun setOtpField(newOtp: String) {
+        otp = newOtp
     }
 
     var firstName by mutableStateOf("")
@@ -57,67 +92,45 @@ class RegistrationViewModel @Inject constructor(
     var lastName by mutableStateOf("")
         private set
 
+    var password by mutableStateOf("")
+        private set
+
     var firstNameError by mutableStateOf<String?>(null)
         private set
 
     var lastNameError by mutableStateOf<String?>(null)
         private set
 
-    var password by mutableStateOf("")
-        private set
-
-    var username by mutableStateOf("")
-        private set
-
-    var isLoading by mutableStateOf(false)
-        private set
-
     private val _emailExistResult = MutableStateFlow<EmailExistResult>(EmailExistResult.Idle)
-    var emailExistResult: StateFlow<EmailExistResult> = _emailExistResult
+    val emailExistResult: StateFlow<EmailExistResult> = _emailExistResult
 
     private val _registrationResult = MutableStateFlow<RegistrationResult>(RegistrationResult.Idle)
-    var registrationResult: StateFlow<RegistrationResult> = _registrationResult
+    val registrationResult: StateFlow<RegistrationResult> = _registrationResult
 
     private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
-    var loginResult: StateFlow<LoginResult> = _loginResult
+    val loginResult: StateFlow<LoginResult> = _loginResult
 
-    fun resetState() {
-        // Reset all mutable state variables
-        email = ""
-        isEmailValid = true
-        firstName = ""
-        lastName = ""
-        firstNameError = null
-        lastNameError = null
-        password = ""
-        username = ""
-        isLoading = false
-
-        // Reset all state flows
-        _emailExistResult.value = EmailExistResult.Idle
-        _registrationResult.value = RegistrationResult.Idle
-        _loginResult.value = LoginResult.Idle
+    fun setFirstNameField(newFirstName: String) {
+        firstName = newFirstName
+        if (firstNameError != null) {
+            validateNames()
+        }
     }
 
-    fun setFirstNameField(first: String) {
-        firstName = first
-    }
-
-    fun setLastNameField(last: String) {
-        lastName = last
+    fun setLastNameField(newLastName: String) {
+        lastName = newLastName
+        if (lastNameError != null) {
+            validateNames()
+        }
     }
 
     fun setPasswordField(newPassword: String) {
         password = newPassword
     }
 
-    fun setUsernameField(newUsername: String) {
-        username = newUsername
-    }
-
-    private fun validateEmail(email: String): Boolean {
-        val regex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")
-        return regex.matches(email)
+    fun validateEmail(email: String): Boolean {
+        val regex = "^[A-Za-z0-9+_.-]+@(.+)\$".toRegex()
+        return email.matches(regex)
     }
 
     fun checkEmailIsExists() {
@@ -141,6 +154,48 @@ class RegistrationViewModel @Inject constructor(
         }
     }
 
+    fun checkUsernameExists() {
+        viewModelScope.launch {
+            _usernameExistResult.value = UsernameExistResult.Idle
+            isLoading = true
+            try {
+                val response = usersRepository.checkUsernameExist(username)
+                if (response.code == 200) {
+                    _usernameExistResult.value =
+                        if (response.exist) UsernameExistResult.Exist else UsernameExistResult.NotExist
+                } else {
+                    _usernameExistResult.value = UsernameExistResult.Error(response.message)
+                }
+            } catch (e: Exception) {
+                _usernameExistResult.value = UsernameExistResult.Error(e.message ?: "Unknown error")
+                Log.e("RegistrationViewModel", "Username check failed: ${e.message}", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun sendVerificationOtp() {
+        viewModelScope.launch {
+            _sendOtpResult.value = SendOtpResult.Idle
+            isLoading = true
+            try {
+                val request = SendVerificationOtpRequest(email, username)
+                val response = authRepository.sendVerificationOtp(request)
+                if (response.isSuccessful && response.body()?.code == 200) {
+                    _sendOtpResult.value = SendOtpResult.Success
+                } else {
+                    _sendOtpResult.value = SendOtpResult.Error(response.body()?.message ?: "Failed to send OTP")
+                }
+            } catch (e: Exception) {
+                _sendOtpResult.value = SendOtpResult.Error(e.message ?: "Unknown error")
+                Log.e("RegistrationViewModel", "Send OTP failed: ${e.message}", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
     fun isNameValid(name: String): Boolean {
         val regex = "^[\\p{L} .'-]{2,50}$".toRegex()
         return name.matches(regex)
@@ -148,6 +203,14 @@ class RegistrationViewModel @Inject constructor(
 
     fun resetEmailExistResult() {
         _emailExistResult.value = EmailExistResult.Idle
+    }
+
+    fun resetUsernameExistResult() {
+        _usernameExistResult.value = UsernameExistResult.Idle
+    }
+
+    fun resetSendOtpResult() {
+        _sendOtpResult.value = SendOtpResult.Idle
     }
 
     fun validateNames(): Boolean {
@@ -185,7 +248,8 @@ class RegistrationViewModel @Inject constructor(
                     lastName = lastName,
                     email = email,
                     password = password,
-                    username = username
+                    username = username,
+                    otp = otp
                 )
                 val response = authRepository.registerUser(userRegistration)
                 if (response.isSuccessful && response.body()?.code == 200) {
@@ -210,7 +274,6 @@ class RegistrationViewModel @Inject constructor(
         viewModelScope.launch {
             _loginResult.value = LoginResult.Idle
             isLoading = true
-
             try {
                 val response = authRepository.login(email, password)
                 if (response.isSuccessful && response.body()?.code == 200) {
@@ -230,6 +293,25 @@ class RegistrationViewModel @Inject constructor(
     }
 
     fun resetLoginResult() {
+        _loginResult.value = LoginResult.Idle
+    }
+
+    fun resetState() {
+        isLoading = false
+        email = ""
+        username = ""
+        otp = ""
+        isEmailValid = true
+        isUsernameValid = true
+        _usernameExistResult.value = UsernameExistResult.Idle
+        _sendOtpResult.value = SendOtpResult.Idle
+        firstName = ""
+        lastName = ""
+        password = ""
+        firstNameError = null
+        lastNameError = null
+        _emailExistResult.value = EmailExistResult.Idle
+        _registrationResult.value = RegistrationResult.Idle
         _loginResult.value = LoginResult.Idle
     }
 }

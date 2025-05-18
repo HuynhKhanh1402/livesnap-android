@@ -3,7 +3,9 @@ package dev.vku.livesnap.data.repository
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.remote.ApiService
 import dev.vku.livesnap.data.remote.dto.request.LoginRequest
+import dev.vku.livesnap.data.remote.dto.request.SendVerificationOtpRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
 import retrofit2.Response
@@ -11,6 +13,7 @@ import retrofit2.Response
 interface AuthRepository {
     suspend fun login(email: String, password: String): Response<LoginResponse>
     suspend fun registerUser(user: UserRegistrationRequest): Response<UserRegistrationResponse>
+    suspend fun sendVerificationOtp(request: SendVerificationOtpRequest): Response<DefaultResponse>
     suspend fun logout(): Response<Unit>
     suspend fun getCurrentUserId(): String?
 }
@@ -32,6 +35,10 @@ class DefaultAuthRepository(
 
     override suspend fun registerUser(user: UserRegistrationRequest): Response<UserRegistrationResponse> {
         return apiService.registerUser(user)
+    }
+
+    override suspend fun sendVerificationOtp(request: SendVerificationOtpRequest): Response<DefaultResponse> {
+        return apiService.sendVerificationOtp(request)
     }
 
     override suspend fun logout(): Response<Unit> {

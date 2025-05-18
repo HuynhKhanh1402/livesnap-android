@@ -2,10 +2,8 @@ package dev.vku.livesnap.ui.screen.auth.register
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -17,7 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -46,53 +44,50 @@ import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-object RegistrationUserIdDestination : NavigationDestination {
-    override val route = "auth/register/userId"
+object RegistrationOtpDestination : NavigationDestination {
+    override val route = "auth/register/otp"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistrationUsernameScreen(
+fun RegistrationOtpScreen(
     viewModel: RegistrationViewModel,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
     var visible by remember { mutableStateOf(false) }
-    val usernameExistResult by viewModel.usernameExistResult.collectAsState()
-    val sendOtpResult by viewModel.sendOtpResult.collectAsState()
+    val registrationResult by viewModel.registrationResult.collectAsState()
+    val loginResult by viewModel.loginResult.collectAsState()
+    val email = viewModel.email
 
     LaunchedEffect(Unit) {
         visible = true
     }
 
-    LaunchedEffect(usernameExistResult) {
-        when (usernameExistResult) {
-            is UsernameExistResult.Exist -> {
-                snackbarHostState.showSnackbar("Username already exists")
-                viewModel.resetUsernameExistResult()
+    LaunchedEffect(registrationResult) {
+        when (registrationResult) {
+            is RegistrationResult.Success -> {
+                viewModel.resetRegistrationResult()
+                viewModel.login()
             }
-            is UsernameExistResult.NotExist -> {
-                viewModel.sendVerificationOtp()
-                viewModel.resetUsernameExistResult()
-            }
-            is UsernameExistResult.Error -> {
-                snackbarHostState.showSnackbar((usernameExistResult as UsernameExistResult.Error).message)
-                viewModel.resetUsernameExistResult()
+            is RegistrationResult.Error -> {
+                snackbarHostState.showSnackbar((registrationResult as RegistrationResult.Error).message)
+                viewModel.resetRegistrationResult()
             }
             else -> {}
         }
     }
 
-    LaunchedEffect(sendOtpResult) {
-        when (sendOtpResult) {
-            is SendOtpResult.Success -> {
+    LaunchedEffect(loginResult) {
+        when (loginResult) {
+            is LoginResult.Success -> {
+                viewModel.resetLoginResult()
                 onNext()
-                viewModel.resetSendOtpResult()
             }
-            is SendOtpResult.Error -> {
-                snackbarHostState.showSnackbar((sendOtpResult as SendOtpResult.Error).message)
-                viewModel.resetSendOtpResult()
+            is LoginResult.Error -> {
+                snackbarHostState.showSnackbar((loginResult as LoginResult.Error).message)
+                viewModel.resetLoginResult()
             }
             else -> {}
         }
@@ -145,7 +140,7 @@ fun RegistrationUsernameScreen(
 
                 // Welcome text
                 Text(
-                    text = "Create your account",
+                    text = "Verify your account",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -154,28 +149,28 @@ fun RegistrationUsernameScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Please choose a username",
+                    text = "Please enter the 6-digit code sent to your email: $email",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Username input field
+                // OTP input field
                 OutlinedTextField(
-                    value = viewModel.username,
-                    onValueChange = viewModel::setUsernameField,
-                    label = { Text(stringResource(R.string.username)) },
+                    value = viewModel.otp,
+                    onValueChange = { newValue ->
+                        if (newValue.length <= 6 && newValue.all { it.isDigit() }) {
+                            viewModel.setOtpField(newValue)
+                        }
+                    },
+                    label = { Text("OTP Code") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = viewModel.username.isNotEmpty() && !viewModel.isValidUsername(),
+                    isError = viewModel.otp.isNotEmpty() && viewModel.otp.length != 6,
                     supportingText = {
-                        AnimatedVisibility(
-                            visible = viewModel.username.isNotEmpty() && !viewModel.isValidUsername(),
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
+                        if (viewModel.otp.isNotEmpty() && viewModel.otp.length != 6) {
                             Text(
-                                text = stringResource(R.string.username_invalid),
+                                text = "Please enter a 6-digit code",
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -183,9 +178,9 @@ fun RegistrationUsernameScreen(
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Person,
+                            imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = if (viewModel.username.isNotEmpty() && !viewModel.isValidUsername())
+                            tint = if (viewModel.otp.isNotEmpty() && viewModel.otp.length != 6)
                                 MaterialTheme.colorScheme.error
                             else
                                 MaterialTheme.colorScheme.primary
@@ -207,10 +202,10 @@ fun RegistrationUsernameScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Create account button
+                // Verify button
                 Button(
-                    onClick = { viewModel.checkUsernameExists() },
-                    enabled = viewModel.isValidUsername() && !viewModel.isLoading,
+                    onClick = { viewModel.register() },
+                    enabled = viewModel.otp.length == 6 && !viewModel.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -220,7 +215,7 @@ fun RegistrationUsernameScreen(
                     )
                 ) {
                     Text(
-                        text = stringResource(R.string.create_account),
+                        text = "Verify",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -232,4 +227,4 @@ fun RegistrationUsernameScreen(
     if (viewModel.isLoading) {
         LoadingOverlay()
     }
-}
+} 
