@@ -2,17 +2,20 @@ package dev.vku.livesnap.data.remote
 
 import dev.vku.livesnap.data.remote.dto.request.CheckEmailExistRequest
 import dev.vku.livesnap.data.remote.dto.request.CheckUsernameExistRequest
+import dev.vku.livesnap.data.remote.dto.request.ForgotPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.LoginRequest
 import dev.vku.livesnap.data.remote.dto.request.ReactSnapRequest
+import dev.vku.livesnap.data.remote.dto.request.ResetPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateNameRequest
-import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
-import dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateEmailRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateFcmTokenRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateUsernameRequest
-import dev.vku.livesnap.data.remote.dto.request.FeedbackRequest
 import dev.vku.livesnap.data.remote.dto.request.UpdateVisibilityRequest
+import dev.vku.livesnap.data.remote.dto.request.FeedbackRequest
 import dev.vku.livesnap.data.remote.dto.request.SendVerificationOtpRequest
+import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.request.CheckPasswordRequest
+import dev.vku.livesnap.data.remote.dto.request.VerifyOtpRequest
 import dev.vku.livesnap.data.remote.dto.response.CheckEmailExistResponse
 import dev.vku.livesnap.data.remote.dto.response.CheckUsernameExistResponse
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
@@ -56,6 +59,15 @@ interface ApiService {
 
     @POST("auth/send-verification-otp")
     suspend fun sendVerificationOtp(@Body request: SendVerificationOtpRequest): Response<DefaultResponse>
+
+    @POST("auth/verify-otp")
+    suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<DefaultResponse>
+
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<DefaultResponse>
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<DefaultResponse>
 
     @GET("users/detail")
     suspend fun fetchUserDetail(): Response<UserDetailResponse>

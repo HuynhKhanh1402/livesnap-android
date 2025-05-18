@@ -1,59 +1,77 @@
-package dev.vku.livesnap.ui.screen.auth.login
+package dev.vku.livesnap.ui.screen.auth.forgotpassword
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.LoadingOverlay
-import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-object LoginPasswordDestination : NavigationDestination {
-    override val route = "auth/login/password"
+object ForgotPasswordOtpDestination : NavigationDestination {
+    override val route = "auth/forgot-password/otp"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPasswordScreen(
-    viewModel: LoginViewModel,
+fun ForgotPasswordOtpScreen(
+    viewModel: ForgotPasswordViewModel,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onNext: () -> Unit,
-    onForgotPassword: () -> Unit
+    onNext: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
-    var passwordVisible by remember { mutableStateOf(false) }
-    val loginResult by viewModel.loginResult.collectAsState()
+    val verifyOtpResult by viewModel.verifyOtpResult.collectAsState()
 
     LaunchedEffect(Unit) {
         visible = true
     }
 
-    LaunchedEffect(loginResult) {
-        when (loginResult) {
-            is LoginResult.Success -> {
+    LaunchedEffect(verifyOtpResult) {
+        when (verifyOtpResult) {
+            is VerifyOtpResult.Success -> {
                 onNext()
-                viewModel.resetLoginResult()
+                viewModel.resetVerifyOtpResult()
             }
-            is LoginResult.Error -> {
-                snackbarHostState.showSnackbar((loginResult as LoginResult.Error).message)
-                viewModel.resetLoginResult()
+            is VerifyOtpResult.Error -> {
+                snackbarHostState.showSnackbar((verifyOtpResult as VerifyOtpResult.Error).message)
+                viewModel.resetVerifyOtpResult()
             }
             else -> {}
         }
@@ -64,7 +82,7 @@ fun LoginPasswordScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.login),
+                        text = "Verify Code",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -104,9 +122,8 @@ fun LoginPasswordScreen(
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Welcome text
                 Text(
-                    text = "Welcome back!",
+                    text = "Enter Verification Code",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -115,53 +132,25 @@ fun LoginPasswordScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Please enter your password to continue",
+                    text = "Please enter the code sent to your email",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Password input field
                 OutlinedTextField(
-                    value = viewModel.password,
-                    onValueChange = viewModel::setPasswordField,
-                    label = { Text(stringResource(R.string.password)) },
+                    value = viewModel.otp,
+                    onValueChange = viewModel::setOtpField,
+                    label = { Text("Verification Code") },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = viewModel.passwordError != null,
-                    supportingText = {
-                        AnimatedVisibility(
-                            visible = viewModel.passwordError != null,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            Text(
-                                text = viewModel.passwordError ?: "",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = if (viewModel.passwordError != null)
-                                MaterialTheme.colorScheme.error
-                            else
-                                MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = stringResource(R.string.toggle_password_visibility),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -173,28 +162,15 @@ fun LoginPasswordScreen(
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         cursorColor = MaterialTheme.colorScheme.primary
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = onForgotPassword,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(
-                        text = "Forgot Password?",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Login button
                 Button(
-                    onClick = { viewModel.login() },
-                    enabled = viewModel.password.isNotEmpty() && !viewModel.isLoading,
+                    onClick = { viewModel.verifyOtp() },
+                    enabled = viewModel.otp.isNotEmpty() && !viewModel.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -204,7 +180,7 @@ fun LoginPasswordScreen(
                     )
                 ) {
                     Text(
-                        text = stringResource(R.string.login),
+                        text = "Verify Code",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -216,4 +192,4 @@ fun LoginPasswordScreen(
     if (viewModel.isLoading) {
         LoadingOverlay()
     }
-}
+} 

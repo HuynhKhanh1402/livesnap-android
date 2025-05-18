@@ -2,9 +2,12 @@ package dev.vku.livesnap.data.repository
 
 import dev.vku.livesnap.data.local.TokenManager
 import dev.vku.livesnap.data.remote.ApiService
+import dev.vku.livesnap.data.remote.dto.request.ForgotPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.LoginRequest
+import dev.vku.livesnap.data.remote.dto.request.ResetPasswordRequest
 import dev.vku.livesnap.data.remote.dto.request.SendVerificationOtpRequest
 import dev.vku.livesnap.data.remote.dto.request.UserRegistrationRequest
+import dev.vku.livesnap.data.remote.dto.request.VerifyOtpRequest
 import dev.vku.livesnap.data.remote.dto.response.DefaultResponse
 import dev.vku.livesnap.data.remote.dto.response.LoginResponse
 import dev.vku.livesnap.data.remote.dto.response.UserRegistrationResponse
@@ -16,6 +19,9 @@ interface AuthRepository {
     suspend fun sendVerificationOtp(request: SendVerificationOtpRequest): Response<DefaultResponse>
     suspend fun logout(): Response<Unit>
     suspend fun getCurrentUserId(): String?
+    suspend fun forgotPassword(request: ForgotPasswordRequest): Response<DefaultResponse>
+    suspend fun verifyOtp(request: VerifyOtpRequest): Response<DefaultResponse>
+    suspend fun resetPassword(request: ResetPasswordRequest): Response<DefaultResponse>
 }
 
 class DefaultAuthRepository(
@@ -42,10 +48,26 @@ class DefaultAuthRepository(
     }
 
     override suspend fun logout(): Response<Unit> {
-        return apiService.logout()
+        val response = apiService.logout()
+        if (response.isSuccessful) {
+            tokenManager.clearToken()
+        }
+        return response
     }
 
     override suspend fun getCurrentUserId(): String? {
         return tokenManager.getCurrentUserId()
+    }
+
+    override suspend fun forgotPassword(request: ForgotPasswordRequest): Response<DefaultResponse> {
+        return apiService.forgotPassword(request)
+    }
+
+    override suspend fun verifyOtp(request: VerifyOtpRequest): Response<DefaultResponse> {
+        return apiService.verifyOtp(request)
+    }
+
+    override suspend fun resetPassword(request: ResetPasswordRequest): Response<DefaultResponse> {
+        return apiService.resetPassword(request)
     }
 } 

@@ -31,6 +31,13 @@ import dev.vku.livesnap.ui.ViewModelResetManager
 import dev.vku.livesnap.ui.screen.auth.AuthSelectDestination
 import dev.vku.livesnap.ui.screen.auth.AuthSelectScreen
 import dev.vku.livesnap.ui.screen.auth.AuthSelectViewModel
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordEmailDestination
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordEmailScreen
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordNewPasswordDestination
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordNewPasswordScreen
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordOtpDestination
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordOtpScreen
+import dev.vku.livesnap.ui.screen.auth.forgotpassword.ForgotPasswordViewModel
 import dev.vku.livesnap.ui.screen.auth.login.LoginEmailDestination
 import dev.vku.livesnap.ui.screen.auth.login.LoginEmailScreen
 import dev.vku.livesnap.ui.screen.auth.login.LoginPasswordDestination
@@ -78,6 +85,7 @@ fun LiveSnapNavHost(
     val authSelectViewModel: AuthSelectViewModel = hiltViewModel()
     val registrationViewModel: RegistrationViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
+    val forgotPasswordViewModel: ForgotPasswordViewModel = hiltViewModel()
 
     val captureViewModel: CaptureViewModel = hiltViewModel()
     var friendModalViewModel: FriendModalViewModel = hiltViewModel()
@@ -219,7 +227,38 @@ fun LiveSnapNavHost(
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
                     onNext = { navController.navigate(HomeDestination.route) },
-                    onForgotPassword = { }
+                    onForgotPassword = { navController.navigate(ForgotPasswordEmailDestination.route) }
+                )
+            }
+
+            composable(route = ForgotPasswordEmailDestination.route) {
+                ForgotPasswordEmailScreen(
+                    viewModel = forgotPasswordViewModel,
+                    snackbarHostState = snackbarHostState,
+                    onBack = { navController.popBackStack() },
+                    onNext = { navController.navigate(ForgotPasswordOtpDestination.route) }
+                )
+            }
+
+            composable(route = ForgotPasswordOtpDestination.route) {
+                ForgotPasswordOtpScreen(
+                    viewModel = forgotPasswordViewModel,
+                    snackbarHostState = snackbarHostState,
+                    onBack = { navController.popBackStack() },
+                    onNext = { navController.navigate(ForgotPasswordNewPasswordDestination.route) }
+                )
+            }
+
+            composable(route = ForgotPasswordNewPasswordDestination.route) {
+                ForgotPasswordNewPasswordScreen(
+                    viewModel = forgotPasswordViewModel,
+                    snackbarHostState = snackbarHostState,
+                    onBack = { navController.popBackStack() },
+                    onNext = { 
+                        navController.navigate(LoginEmailDestination.route) {
+                            popUpTo(AuthSelectDestination.route)
+                        }
+                    }
                 )
             }
 

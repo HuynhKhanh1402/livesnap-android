@@ -1,15 +1,13 @@
-package dev.vku.livesnap.ui.screen.auth.login
+package dev.vku.livesnap.ui.screen.auth.forgotpassword
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,43 +15,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.R
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
 
-object LoginPasswordDestination : NavigationDestination {
-    override val route = "auth/login/password"
+object ForgotPasswordEmailDestination : NavigationDestination {
+    override val route = "auth/forgot-password/email"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPasswordScreen(
-    viewModel: LoginViewModel,
+fun ForgotPasswordEmailScreen(
+    viewModel: ForgotPasswordViewModel,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onNext: () -> Unit,
-    onForgotPassword: () -> Unit
+    onNext: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
-    var passwordVisible by remember { mutableStateOf(false) }
-    val loginResult by viewModel.loginResult.collectAsState()
+    val forgotPasswordResult by viewModel.forgotPasswordResult.collectAsState()
 
     LaunchedEffect(Unit) {
         visible = true
     }
 
-    LaunchedEffect(loginResult) {
-        when (loginResult) {
-            is LoginResult.Success -> {
+    LaunchedEffect(forgotPasswordResult) {
+        when (forgotPasswordResult) {
+            is ForgotPasswordResult.Success -> {
                 onNext()
-                viewModel.resetLoginResult()
+                viewModel.resetForgotPasswordResult()
             }
-            is LoginResult.Error -> {
-                snackbarHostState.showSnackbar((loginResult as LoginResult.Error).message)
-                viewModel.resetLoginResult()
+            is ForgotPasswordResult.Error -> {
+                snackbarHostState.showSnackbar((forgotPasswordResult as ForgotPasswordResult.Error).message)
+                viewModel.resetForgotPasswordResult()
             }
             else -> {}
         }
@@ -64,7 +58,7 @@ fun LoginPasswordScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.login),
+                        text = "Forgot Password",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -104,9 +98,8 @@ fun LoginPasswordScreen(
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Welcome text
                 Text(
-                    text = "Welcome back!",
+                    text = "Reset your password",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -115,28 +108,27 @@ fun LoginPasswordScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Please enter your password to continue",
+                    text = "Enter your email address to receive a verification code",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Password input field
                 OutlinedTextField(
-                    value = viewModel.password,
-                    onValueChange = viewModel::setPasswordField,
-                    label = { Text(stringResource(R.string.password)) },
+                    value = viewModel.email,
+                    onValueChange = viewModel::setEmailField,
+                    label = { Text(stringResource(R.string.email_address)) },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = viewModel.passwordError != null,
+                    isError = !viewModel.isEmailValid && viewModel.email.isNotEmpty(),
                     supportingText = {
                         AnimatedVisibility(
-                            visible = viewModel.passwordError != null,
+                            visible = !viewModel.isEmailValid && viewModel.email.isNotEmpty(),
                             enter = fadeIn() + expandVertically(),
                             exit = fadeOut() + shrinkVertically()
                         ) {
                             Text(
-                                text = viewModel.passwordError ?: "",
+                                text = stringResource(R.string.invalid_email_format),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -144,24 +136,14 @@ fun LoginPasswordScreen(
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Lock,
+                            imageVector = Icons.Default.Email,
                             contentDescription = null,
-                            tint = if (viewModel.passwordError != null)
+                            tint = if (!viewModel.isEmailValid && viewModel.email.isNotEmpty())
                                 MaterialTheme.colorScheme.error
                             else
                                 MaterialTheme.colorScheme.primary
                         )
                     },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = stringResource(R.string.toggle_password_visibility),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -173,28 +155,15 @@ fun LoginPasswordScreen(
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         cursorColor = MaterialTheme.colorScheme.primary
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = onForgotPassword,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(
-                        text = "Forgot Password?",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Login button
                 Button(
-                    onClick = { viewModel.login() },
-                    enabled = viewModel.password.isNotEmpty() && !viewModel.isLoading,
+                    onClick = { viewModel.forgotPassword() },
+                    enabled = viewModel.isEmailValid && viewModel.email.isNotEmpty() && !viewModel.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -204,7 +173,7 @@ fun LoginPasswordScreen(
                     )
                 ) {
                     Text(
-                        text = stringResource(R.string.login),
+                        text = "Send Code",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -216,4 +185,4 @@ fun LoginPasswordScreen(
     if (viewModel.isLoading) {
         LoadingOverlay()
     }
-}
+} 
