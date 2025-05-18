@@ -598,7 +598,6 @@ fun FeedTopBar(
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(16.dp)
                     )
                     .width(280.dp)
             ) {
