@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -40,6 +41,9 @@ import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -71,20 +75,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.vku.livesnap.LoadingOverlay
 import dev.vku.livesnap.domain.model.User
 import dev.vku.livesnap.ui.components.Avatar
 import dev.vku.livesnap.ui.screen.navigation.NavigationDestination
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.ZoneId
 
 object UserProfileDestination : NavigationDestination {
     override val route: String = "profile"
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun UserProfileScreen(
     viewModel: UserProfileViewModel,
@@ -118,6 +121,14 @@ fun UserProfileScreen(
     var showAccountVisibilityDialog by remember { mutableStateOf(false) }
     var isAccountVisible by remember { mutableStateOf(user?.isVisible ?: true) }
     var isVisibilityLoading by remember { mutableStateOf(false) }
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading,
+        onRefresh = {
+            viewModel.resetState()
+            viewModel.fetchUser()
+        }
+    )
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -188,107 +199,117 @@ fun UserProfileScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-            .verticalScroll(scrollState),
+            .pullRefresh(pullRefreshState)
     ) {
-        if (user != null) {
-            ProfileHeader(
-                user = user!!,
-                onUploadAvatarBtnClicked = { showAvatarDialog = true },
-                onEditNameClicked = { showEditNameDialog = true },
-                viewModel = viewModel
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            InviteCard(user!!)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFFFFD700),
-                                    Color(0xFFFFC107),
-                                    Color(0xFFFFB300)
-                                )
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+        ) {
+            if (user != null) {
+                ProfileHeader(
+                    user = user!!,
+                    onUploadAvatarBtnClicked = { showAvatarDialog = true },
+                    onEditNameClicked = { showEditNameDialog = true },
+                    viewModel = viewModel
                 )
+                Spacer(modifier = Modifier.height(24.dp))
+                InviteCard(user!!)
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .border(
-                            width = 2.dp,
-                            color = Color(0xFFFFD700),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clickable(onClick = {
-                            if (user?.isGold == true) {
-                                showGoldMemberDialog = true
-                            } else {
-                                onPremiumFeaturesClick()
-                            }
-                        }),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(bottom = 16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = Color(0xFF8B4513)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(0xFFFFD700),
+                                        Color(0xFFFFC107),
+                                        Color(0xFFFFB300)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (user?.isGold == true) "Gold Member" else "Upgrade LiveSnap Gold",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF8B4513)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .border(
+                                width = 2.dp,
+                                color = Color(0xFFFFD700),
+                                shape = RoundedCornerShape(16.dp)
+                            )
                     )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clickable(onClick = {
+                                if (user?.isGold == true) {
+                                    showGoldMemberDialog = true
+                                } else {
+                                    onPremiumFeaturesClick()
+                                }
+                            }),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = Color(0xFF8B4513)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (user?.isGold == true) "Gold Member" else "Upgrade LiveSnap Gold",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF8B4513)
+                        )
+                    }
                 }
+
+                GeneralSection(
+                    onChangeEmailClick = { showChangeEmailDialog = true },
+                    onSendFeedbackClick = { showFeedbackDialog = true },
+                    onFeedbackHistoryClick = { showFeedbackHistoryDialog = true }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                PrivacyNSecuritySection(onAccountVisibilityClick = { showAccountVisibilityDialog = true })
+                Spacer(modifier = Modifier.height(24.dp))
             }
+            AboutSection()
+            Spacer(modifier = Modifier.height(36.dp))
+            LogoutButton {
+                showLogoutDialog = true
+            }
+        }
 
-            GeneralSection(
-                onChangeEmailClick = { showChangeEmailDialog = true },
-                onSendFeedbackClick = { showFeedbackDialog = true },
-                onFeedbackHistoryClick = { showFeedbackHistoryDialog = true }
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            PrivacyNSecuritySection(onAccountVisibilityClick = { showAccountVisibilityDialog = true })
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        AboutSection()
-        Spacer(modifier = Modifier.height(36.dp))
-        LogoutButton {
-            showLogoutDialog = true
-        }
+        PullRefreshIndicator(
+            refreshing = isLoading,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
+        )
     }
 
-    if (isLoading) {
-        LoadingOverlay()
-    }
 
-    // Modal Bottom Sheet cho chỉnh sửa avatar
     if (showAvatarDialog) {
         ModalBottomSheet(
             onDismissRequest = { showAvatarDialog = false },

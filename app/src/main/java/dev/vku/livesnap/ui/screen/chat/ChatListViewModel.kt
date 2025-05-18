@@ -43,7 +43,7 @@ class ChatListViewModel @Inject constructor(
         loadChats()
     }
 
-    private fun loadChats() {
+    fun loadChats() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
