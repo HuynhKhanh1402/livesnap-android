@@ -208,7 +208,11 @@ fun LiveSnapNavHost(
                     viewModel = registrationViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(HomeDestination.route) }
+                    onNext = { 
+                        navController.navigate(HomeDestination.route) {
+                            popUpTo(AuthSelectDestination.route) { inclusive = true }
+                        }
+                    }
                 )
             }
 
@@ -226,7 +230,11 @@ fun LiveSnapNavHost(
                     viewModel = loginViewModel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
-                    onNext = { navController.navigate(HomeDestination.route) },
+                    onNext = { 
+                        navController.navigate(HomeDestination.route) {
+                            popUpTo(AuthSelectDestination.route) { inclusive = true }
+                        }
+                    },
                     onForgotPassword = { navController.navigate(ForgotPasswordEmailDestination.route) }
                 )
             }
