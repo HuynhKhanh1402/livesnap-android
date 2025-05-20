@@ -26,7 +26,26 @@ LiveSnap is a real-time photo sharing app that lets you share moments with your 
 
 ## Screenshots 📸
 
-*Coming soon*
+### Authentication & Profile
+![Authentication](screenshots/authentication.png)
+![Login](screenshots/login.png)
+![Registration](screenshots/register1.png)
+
+### Core Features
+![Home Feed](screenshots/home.png)
+![Capture](screenshots/capture1.png)
+![Snap Sharing](screenshots/snap.png)
+![Chat](screenshots/chat1.png)
+![Friend Management](screenshots/friend-modal-1.png)
+![Profile](screenshots/profile1.png)
+
+### Additional Screens
+![Profile Details](screenshots/profile2.png)
+![Chat Interface](screenshots/chat2.png)
+![Capture Options](screenshots/capture2.png)
+![Friend List](screenshots/friend-modal-2.png)
+![Friend Details](screenshots/friend-modal-3.png)
+
 
 ## Tech Stack 🛠
 
