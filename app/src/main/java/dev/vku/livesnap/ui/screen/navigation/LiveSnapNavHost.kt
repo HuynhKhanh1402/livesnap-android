@@ -306,6 +306,8 @@ fun LiveSnapNavHost(
                             navController.popBackStack()
                         },
                         onUploaded = {
+                            feedViewModel.resetState()
+                            uploadSnapViewModel.resetState()
                             navController.navigate(HomeDestination.route) {
                                 popUpTo(HomeDestination.route) { inclusive = true }
                             }
