@@ -1,6 +1,12 @@
 package dev.vku.livesnap.ui.screen.home
 
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.icu.text.BreakIterator
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,9 +24,15 @@ import dev.vku.livesnap.domain.mapper.toSnapList
 import dev.vku.livesnap.domain.model.Snap
 import dev.vku.livesnap.domain.model.Friend
 import dev.vku.livesnap.ui.util.LoadingResult
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 sealed class LoadSnapResult {
@@ -190,6 +202,50 @@ class FeedViewModel @Inject constructor(
                 _reactSnapResult.value = LoadingResult.Error("An error occurred: ${e.message}")
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    fun saveSnap(context: Context, snap: Snap, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val url = URL(snap.image)
+                    val connection = url.openConnection()
+                    connection.connect()
+                    val inputStream = connection.getInputStream()
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                    val filename = "LiveSnap_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.jpg"
+
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.Images.Media.IS_PENDING, 1)
+                        }
+                    }
+
+                    val resolver = context.contentResolver
+                    val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                        ?: throw Exception("Failed to create new MediaStore record")
+
+                    resolver.openOutputStream(imageUri).use { outStream ->
+                        if (outStream == null) throw Exception("Failed to get output stream")
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        contentValues.clear()
+                        contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        resolver.update(imageUri, contentValues, null, null)
+                    }
+                }
+
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("FeedViewModel", "Failed to save snap: ${e.message}", e)
+                onError("Lưu ảnh thất bại: ${e.message}")
             }
         }
     }

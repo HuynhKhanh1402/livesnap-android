@@ -140,6 +140,8 @@ fun FeedScreen(
 
     val isFetchingCurrentSnap by viewModel.isFetchingCurrentSnap.collectAsState()
 
+    val context = LocalContext.current
+
     LaunchedEffect(isGoldResult) {
         when (isGoldResult) {
             is LoadingResult.Idle -> {
@@ -237,6 +239,17 @@ fun FeedScreen(
                             }
                         })
                     },
+                    onSaveBtnClicked = {snap ->
+                        viewModel.saveSnap(context, snap, {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Save snap successful!")
+                            }
+                        }, { error ->
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Error: $error")
+                            }
+                        })
+                    },
                     onReact = { emoji ->
                         viewModel.reactSnap(snap, emoji)
                     },
@@ -299,6 +312,7 @@ fun Feed(
     onProfileBtnClicked: () -> Unit,
     onChatBtnClicked: () -> Unit,
     onDeleteBtnClicked: () -> Unit,
+    onSaveBtnClicked: (Snap) -> Unit,
     onReact: (String) -> Unit,
     onSendMessage: (String) -> Unit,
     onNavigateToHome: () -> Unit,
@@ -406,6 +420,7 @@ fun Feed(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
+                            onSaveBtnClicked(snap)
                             showDialog.value = false
                         }
                         .padding(vertical = 12.dp),
